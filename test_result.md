@@ -264,6 +264,9 @@ frontend:
         - working: true
           agent: "main"
           comment: "Added manual text input as fallback for OCR issues. Users can type/paste text directly for translation. Fully functional with beautiful UI."
+        - working: true
+          agent: "testing"
+          comment: "THOROUGHLY TESTED! Manual text input feature works perfectly. Toggle button shows/hides input area correctly. Text translation from English to Italian successful: 'Hello, this is a test document for translation. The quick brown fox jumps over the lazy dog.' → 'Ciao, questo è un documento di prova per la traduzione. La volpe marrone salta sopra il cane pigro.' Results display with proper metadata, reset functionality works. Mobile responsive. No issues found."
 
 metadata:
   created_by: "main_agent"
