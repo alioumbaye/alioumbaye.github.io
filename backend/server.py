@@ -14,6 +14,13 @@ import base64
 import json
 import requests
 from urllib.parse import quote
+import io
+
+# Import Google Cloud Vision library
+from google.cloud import vision
+from google.oauth2 import service_account
+import google.auth
+from google.auth.transport.requests import Request
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
