@@ -71,6 +71,13 @@ def extract_text_from_image(base64_image: str) -> str:
         if 'base64,' in base64_image:
             base64_image = base64_image.split('base64,')[1]
         
+        # Validate base64 string
+        try:
+            # Test if base64 is valid
+            base64.b64decode(base64_image)
+        except Exception:
+            raise Exception("Invalid base64 image data")
+        
         # Prepare the request to Google Cloud Vision API
         url = f"https://vision.googleapis.com/v1/images:annotate?key={GOOGLE_API_KEY}"
         
@@ -82,7 +89,8 @@ def extract_text_from_image(base64_image: str) -> str:
                     },
                     "features": [
                         {
-                            "type": "TEXT_DETECTION"
+                            "type": "TEXT_DETECTION",
+                            "maxResults": 10
                         }
                     ]
                 }
@@ -93,17 +101,25 @@ def extract_text_from_image(base64_image: str) -> str:
             'Content-Type': 'application/json'
         }
         
-        response = requests.post(url, headers=headers, json=payload)
+        response = requests.post(url, headers=headers, json=payload, timeout=30)
         
         if response.status_code != 200:
-            raise Exception(f"Vision API error: {response.text}")
+            raise Exception(f"Vision API HTTP error {response.status_code}: {response.text}")
         
         result = response.json()
         
+        # Check for API errors in response
         if 'responses' in result and len(result['responses']) > 0:
-            if 'textAnnotations' in result['responses'][0]:
-                return result['responses'][0]['textAnnotations'][0]['description']
+            resp = result['responses'][0]
+            
+            # Check for errors in the response
+            if 'error' in resp:
+                raise Exception(f"Vision API error: {resp['error']}")
+            
+            if 'textAnnotations' in resp and len(resp['textAnnotations']) > 0:
+                return resp['textAnnotations'][0]['description']
         
+        # If no error but no text found, return empty string
         return ""
         
     except Exception as e:
