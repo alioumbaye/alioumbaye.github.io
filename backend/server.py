@@ -108,16 +108,12 @@ def extract_text_from_image(base64_image: str) -> str:
 def extract_text_with_vision_library(image_bytes: bytes) -> str:
     """Use Google Cloud Vision library with API key authentication"""
     try:
-        # Create credentials using API key
-        from google.auth.credentials import AnonymousCredentials
-        from google.cloud.vision_v1.services.image_annotator import ImageAnnotatorClient
+        # Set the API key environment variable temporarily
+        os.environ['GOOGLE_API_KEY'] = GOOGLE_API_KEY
         
-        # Create client with API key
-        client = ImageAnnotatorClient(
-            credentials=AnonymousCredentials(),
-            client_options={
-                "api_key": GOOGLE_API_KEY
-            }
+        # Create client with API key only
+        client = vision.ImageAnnotatorClient(
+            client_options={"api_key": GOOGLE_API_KEY}
         )
         
         # Create Image object
