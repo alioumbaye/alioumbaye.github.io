@@ -155,6 +155,8 @@ function App() {
     setImagePreview(null);
     setResult(null);
     setError('');
+    setManualText('');
+    setShowManualInput(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
