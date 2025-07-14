@@ -108,40 +108,20 @@ def extract_text_from_image(base64_image: str) -> str:
 def extract_text_with_vision_library(image_bytes: bytes) -> str:
     """Use Google Cloud Vision library with API key authentication"""
     try:
-        # Set the API key environment variable temporarily
-        os.environ['GOOGLE_API_KEY'] = GOOGLE_API_KEY
-        
-        # Create client with API key only
-        client = vision.ImageAnnotatorClient(
-            client_options={"api_key": GOOGLE_API_KEY}
-        )
-        
-        # Create Image object
-        image = vision.Image(content=image_bytes)
-        
-        # Perform text detection
-        response = client.text_detection(image=image)
-        
-        # Check for errors
-        if response.error.message:
-            raise Exception(f"Vision API error: {response.error.message}")
-        
-        # Extract text
-        texts = response.text_annotations
-        if texts:
-            return texts[0].description
-        else:
-            return ""
+        # For API key authentication, we need to use the REST API approach
+        # The library expects service account credentials
+        base64_image = base64.b64encode(image_bytes).decode('utf-8')
+        return extract_text_with_rest_api(base64_image)
             
     except Exception as e:
         raise Exception(f"Vision library method failed: {str(e)}")
 
 def extract_text_with_rest_api(base64_image: str) -> str:
-    """Use REST API with improved request format"""
+    """Use REST API with API key as query parameter"""
     try:
+        # Use API key as query parameter (correct method)
         url = f"https://vision.googleapis.com/v1/images:annotate?key={GOOGLE_API_KEY}"
         
-        # Try different request format
         payload = {
             "requests": [
                 {
@@ -153,17 +133,13 @@ def extract_text_with_rest_api(base64_image: str) -> str:
                             "type": "TEXT_DETECTION",
                             "maxResults": 50
                         }
-                    ],
-                    "imageContext": {
-                        "languageHints": ["en", "fr", "it"]
-                    }
+                    ]
                 }
             ]
         }
         
         headers = {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json'
+            'Content-Type': 'application/json'
         }
         
         response = requests.post(url, headers=headers, json=payload, timeout=30)
@@ -190,9 +166,9 @@ def extract_text_with_rest_api(base64_image: str) -> str:
         raise Exception(f"REST API method failed: {str(e)}")
 
 def extract_text_with_auth_headers(base64_image: str) -> str:
-    """Use REST API with explicit authentication headers"""
+    """Use REST API with API key in different header format"""
     try:
-        url = "https://vision.googleapis.com/v1/images:annotate"
+        url = f"https://vision.googleapis.com/v1/images:annotate?key={GOOGLE_API_KEY}"
         
         payload = {
             "requests": [
@@ -211,7 +187,6 @@ def extract_text_with_auth_headers(base64_image: str) -> str:
         
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': f'Bearer {GOOGLE_API_KEY}',
             'X-Goog-Api-Key': GOOGLE_API_KEY
         }
         
