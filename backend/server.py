@@ -72,54 +72,19 @@ class TranslationHistory(BaseModel):
 
 # Helper functions
 def extract_text_from_image(base64_image: str) -> str:
-    """Extract text from image using Google Cloud Vision API - Multiple approaches"""
-    
-    # Remove data URL prefix if present
-    if 'base64,' in base64_image:
-        base64_image = base64_image.split('base64,')[1]
-    
-    # Validate base64 string
+    """Extract text from image using Google Cloud Vision API"""
     try:
-        image_bytes = base64.b64decode(base64_image)
-    except Exception:
-        raise Exception("Invalid base64 image data")
-    
-    # Approach 1: Try Google Cloud Vision library with API key
-    try:
-        return extract_text_with_vision_library(image_bytes)
-    except Exception as e:
-        logging.warning(f"Vision library approach failed: {e}")
+        # Remove data URL prefix if present
+        if 'base64,' in base64_image:
+            base64_image = base64_image.split('base64,')[1]
         
-    # Approach 2: Try REST API with different request format
-    try:
-        return extract_text_with_rest_api(base64_image)
-    except Exception as e:
-        logging.warning(f"REST API approach failed: {e}")
+        # Validate base64 string
+        try:
+            base64.b64decode(base64_image)
+        except Exception:
+            raise Exception("Invalid base64 image data")
         
-    # Approach 3: Try with explicit authentication headers
-    try:
-        return extract_text_with_auth_headers(base64_image)
-    except Exception as e:
-        logging.warning(f"Auth headers approach failed: {e}")
-        
-    # If all approaches fail, raise an error
-    raise Exception("All OCR approaches failed - please check your Google Cloud Vision API setup")
-
-def extract_text_with_vision_library(image_bytes: bytes) -> str:
-    """Use Google Cloud Vision library with API key authentication"""
-    try:
-        # For API key authentication, we need to use the REST API approach
-        # The library expects service account credentials
-        base64_image = base64.b64encode(image_bytes).decode('utf-8')
-        return extract_text_with_rest_api(base64_image)
-            
-    except Exception as e:
-        raise Exception(f"Vision library method failed: {str(e)}")
-
-def extract_text_with_rest_api(base64_image: str) -> str:
-    """Use REST API with API key as query parameter"""
-    try:
-        # Use API key as query parameter (correct method)
+        # Use standard Google Cloud Vision API with API key
         url = f"https://vision.googleapis.com/v1/images:annotate?key={GOOGLE_API_KEY}"
         
         payload = {
@@ -163,53 +128,7 @@ def extract_text_with_rest_api(base64_image: str) -> str:
         return ""
         
     except Exception as e:
-        raise Exception(f"REST API method failed: {str(e)}")
-
-def extract_text_with_auth_headers(base64_image: str) -> str:
-    """Use REST API with API key in different header format"""
-    try:
-        url = f"https://vision.googleapis.com/v1/images:annotate?key={GOOGLE_API_KEY}"
-        
-        payload = {
-            "requests": [
-                {
-                    "image": {
-                        "content": base64_image
-                    },
-                    "features": [
-                        {
-                            "type": "TEXT_DETECTION"
-                        }
-                    ]
-                }
-            ]
-        }
-        
-        headers = {
-            'Content-Type': 'application/json',
-            'X-Goog-Api-Key': GOOGLE_API_KEY
-        }
-        
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
-        
-        if response.status_code != 200:
-            raise Exception(f"Vision API HTTP error {response.status_code}: {response.text}")
-        
-        result = response.json()
-        
-        if 'responses' in result and len(result['responses']) > 0:
-            resp = result['responses'][0]
-            
-            if 'error' in resp:
-                raise Exception(f"Vision API error: {resp['error']}")
-            
-            if 'textAnnotations' in resp and len(resp['textAnnotations']) > 0:
-                return resp['textAnnotations'][0]['description']
-        
-        return ""
-        
-    except Exception as e:
-        raise Exception(f"Auth headers method failed: {str(e)}")
+        raise Exception(f"Text extraction failed: {str(e)}")
 
 def translate_text(text: str, target_language: str) -> dict:
     """Translate text using Google Translate API"""
