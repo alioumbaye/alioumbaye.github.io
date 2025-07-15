@@ -8,19 +8,33 @@ const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
 const API = `${BACKEND_URL}/api`;
 
 function App() {
+  const { t, i18n } = useTranslation();
+  const [uiLanguage, setUiLanguage] = useState('it');
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [uploadedFile, setUploadedFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
+  const [viewMode, setViewMode] = useState('tabs'); // 'tabs', 'sideBySide', 'sections'
   const fileInputRef = useRef(null);
 
-  const languages = [
-    { code: 'italian', name: 'Italian', flag: '🇮🇹' },
-    { code: 'french', name: 'French', flag: '🇫🇷' },
-    { code: 'wolof', name: 'Wolof', flag: '🇸🇳' }
+  const uiLanguages = [
+    { code: 'it', name: 'Italiano', flag: '🇮🇹' },
+    { code: 'fr', name: 'Français', flag: '🇫🇷' },
+    { code: 'wo', name: 'Wolof', flag: '🌍' }
   ];
+
+  const languages = [
+    { code: 'italian', name: t('italian'), flag: '🇮🇹' },
+    { code: 'french', name: t('french'), flag: '🇫🇷' },
+    { code: 'wolof', name: t('wolof'), flag: '🇸🇳' }
+  ];
+
+  const handleUILanguageChange = (langCode) => {
+    setUiLanguage(langCode);
+    i18n.changeLanguage(langCode);
+  };
 
   const handleLanguageSelect = (language) => {
     setSelectedLanguage(language);
