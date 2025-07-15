@@ -327,7 +327,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "PDF upload functionality testing completed successfully"
+    - "Multilingual UI Support and Redesigned Results Section testing completed successfully"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
