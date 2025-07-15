@@ -57,6 +57,7 @@ class DocumentAnalysisResponse(BaseModel):
     success: bool
     original_text: str
     translated_text: str
+    explanation: str
     detected_language: str
     target_language: str
     timestamp: datetime
