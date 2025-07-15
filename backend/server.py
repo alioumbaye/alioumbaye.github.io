@@ -80,7 +80,106 @@ class PDFExportRequest(BaseModel):
     filename: str
     explanation: str
 
-# Helper functions
+def generate_translated_pdf(original_text: str, translated_text: str, target_language: str, filename: str, explanation: str) -> bytes:
+    """Generate a PDF with the translated text maintaining structure"""
+    try:
+        buffer = io.BytesIO()
+        
+        # Create document
+        doc = SimpleDocTemplate(buffer, pagesize=A4)
+        styles = getSampleStyleSheet()
+        
+        # Create custom styles
+        title_style = ParagraphStyle(
+            name='CustomTitle',
+            parent=styles['Title'],
+            fontSize=16,
+            spaceAfter=20,
+            textColor=colors.HexColor('#667eea'),
+            alignment=1  # Center alignment
+        )
+        
+        heading_style = ParagraphStyle(
+            name='CustomHeading',
+            parent=styles['Heading2'],
+            fontSize=14,
+            spaceAfter=12,
+            textColor=colors.HexColor('#333333'),
+            leftIndent=0
+        )
+        
+        body_style = ParagraphStyle(
+            name='CustomBody',
+            parent=styles['Normal'],
+            fontSize=11,
+            spaceAfter=8,
+            leading=14,
+            leftIndent=0
+        )
+        
+        # Language names for title
+        language_names = {
+            'italian': 'Italiano',
+            'french': 'Français',
+            'wolof': 'Wolof'
+        }
+        
+        # Build content
+        story = []
+        
+        # Title
+        story.append(Paragraph(f"TAHAWU AI - Documento Tradotto", title_style))
+        story.append(Paragraph(f"Traduzione in {language_names.get(target_language, target_language.title())}", heading_style))
+        story.append(Spacer(1, 0.2*inch))
+        
+        # Document info
+        story.append(Paragraph(f"<b>File originale:</b> {filename}", body_style))
+        story.append(Paragraph(f"<b>Lingua di destinazione:</b> {language_names.get(target_language, target_language.title())}", body_style))
+        story.append(Paragraph(f"<b>Data di elaborazione:</b> {datetime.now().strftime('%d/%m/%Y %H:%M')}", body_style))
+        story.append(Spacer(1, 0.3*inch))
+        
+        # Translated text sections
+        story.append(Paragraph("Testo Tradotto", heading_style))
+        story.append(Spacer(1, 0.1*inch))
+        
+        # Parse and format translated text
+        sections = translated_text.split('\n\n')
+        for section in sections:
+            if section.strip():
+                lines = section.strip().split('\n')
+                for line in lines:
+                    if line.strip():
+                        # Check if it's a page header or section header
+                        if line.startswith('--- ') or line.upper() == line and len(line) < 50:
+                            story.append(Paragraph(f"<b>{line}</b>", heading_style))
+                        else:
+                            story.append(Paragraph(line, body_style))
+                story.append(Spacer(1, 0.1*inch))
+        
+        # Add explanation section
+        story.append(PageBreak())
+        story.append(Paragraph("Spiegazione del Documento", heading_style))
+        story.append(Spacer(1, 0.1*inch))
+        
+        # Format explanation
+        explanation_paragraphs = explanation.split('\n')
+        for para in explanation_paragraphs:
+            if para.strip():
+                story.append(Paragraph(para.strip(), body_style))
+        
+        # Build PDF
+        doc.build(story)
+        
+        # Return PDF bytes
+        pdf_bytes = buffer.getvalue()
+        buffer.close()
+        
+        return pdf_bytes
+        
+    except Exception as e:
+        raise Exception(f"PDF generation failed: {str(e)}")
+
+# Helper functions (existing functions remain the same)...
 def is_pdf_file(base64_data: str) -> bool:
     """Check if the base64 data represents a PDF file"""
     try:
