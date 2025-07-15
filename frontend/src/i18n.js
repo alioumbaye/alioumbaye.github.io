@@ -190,6 +190,9 @@ const resources = {
       tabs: "Bët",
       sections: "Yëf",
       
+      // PDF Download
+      downloadPDF: "Yeb PDF bu Tektal",
+      
       // Section Headers
       page: "Xët",
       introduction: "Tàmbaali",
