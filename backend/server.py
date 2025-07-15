@@ -458,6 +458,38 @@ def translate_text(text: str, target_language: str) -> dict:
     except Exception as e:
         raise Exception(f"Translation failed: {str(e)}")
 
+@api_router.post("/export-pdf")
+async def export_translated_pdf(request: PDFExportRequest):
+    try:
+        # Generate PDF with translated content
+        pdf_bytes = generate_translated_pdf(
+            request.original_text,
+            request.translated_text,
+            request.target_language,
+            request.filename,
+            request.explanation
+        )
+        
+        # Create filename for download
+        base_name = os.path.splitext(request.filename)[0]
+        language_suffix = {
+            'italian': 'IT',
+            'french': 'FR',
+            'wolof': 'WO'
+        }.get(request.target_language, request.target_language.upper())
+        
+        download_filename = f"{base_name}_translated_{language_suffix}.pdf"
+        
+        # Return PDF as streaming response
+        return StreamingResponse(
+            io.BytesIO(pdf_bytes),
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={download_filename}"}
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 # Add your routes to the router instead of directly to app
 @api_router.get("/")
 async def root():
