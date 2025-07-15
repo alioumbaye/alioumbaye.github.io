@@ -94,54 +94,8 @@ function App() {
       setResult(response.data);
     } catch (err) {
       const errorMessage = err.response?.data?.detail || 'An error occurred during analysis';
-      
-      // If OCR fails, offer alternative
-      if (errorMessage.includes('OCR') || errorMessage.includes('Vision API')) {
-        setError(`OCR service temporarily unavailable. You can still translate text manually using the text input below.`);
-      } else {
-        setError(errorMessage);
-      }
+      setError(errorMessage);
       console.error('Analysis error:', err);
-    } finally {
-      setAnalyzing(false);
-    }
-  };
-
-  const handleTextTranslation = async () => {
-    if (!selectedLanguage) {
-      setError('Please select a target language first');
-      return;
-    }
-
-    if (!manualText.trim()) {
-      setError('Please enter some text to translate');
-      return;
-    }
-
-    setAnalyzing(true);
-    setError('');
-
-    try {
-      const formData = new FormData();
-      formData.append('text', manualText);
-      formData.append('target_language', selectedLanguage);
-
-      const response = await axios.post(`${API}/translate-text`, formData);
-
-      // Convert to same format as document analysis
-      const translationResult = {
-        success: true,
-        original_text: response.data.original_text,
-        translated_text: response.data.translated_text,
-        detected_language: response.data.detected_language,
-        target_language: response.data.target_language,
-        timestamp: new Date().toISOString()
-      };
-
-      setResult(translationResult);
-    } catch (err) {
-      setError(err.response?.data?.detail || 'An error occurred during translation');
-      console.error('Translation error:', err);
     } finally {
       setAnalyzing(false);
     }
@@ -153,8 +107,6 @@ function App() {
     setImagePreview(null);
     setResult(null);
     setError('');
-    setManualText('');
-    setShowManualInput(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
