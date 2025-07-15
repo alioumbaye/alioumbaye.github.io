@@ -202,6 +202,8 @@ function App() {
       setError('Failed to generate PDF download');
     }
   };
+
+  const renderTextSections = (text, isTranslated = false) => {
     const sections = detectSectionHeaders(text);
     
     return sections.map((section, index) => (
