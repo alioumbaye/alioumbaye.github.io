@@ -48,13 +48,13 @@ function App() {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf'];
     if (!allowedTypes.includes(file.type)) {
-      setError('Please select an image file (JPEG, PNG, GIF) or PDF');
+      setError(t('invalidFileType'));
       return;
     }
 
     // Validate file size (5MB limit)
     if (file.size > 5 * 1024 * 1024) {
-      setError('File size must be less than 5MB');
+      setError(t('fileTooLarge'));
       return;
     }
 
@@ -85,12 +85,12 @@ function App() {
 
   const handleAnalyzeDocument = async () => {
     if (!selectedLanguage) {
-      setError('Please select a target language first');
+      setError(t('selectLanguageFirst'));
       return;
     }
 
     if (!uploadedFile) {
-      setError('Please upload a document first');
+      setError(t('uploadDocumentFirst'));
       return;
     }
 
@@ -109,7 +109,7 @@ function App() {
 
       setResult(response.data);
     } catch (err) {
-      const errorMessage = err.response?.data?.detail || 'An error occurred during analysis';
+      const errorMessage = err.response?.data?.detail || t('analysisError');
       setError(errorMessage);
       console.error('Analysis error:', err);
     } finally {
@@ -126,6 +126,58 @@ function App() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  // Helper function to detect section headers
+  const detectSectionHeaders = (text) => {
+    const lines = text.split('\n');
+    const sections = [];
+    let currentSection = null;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i].trim();
+      if (!line) continue;
+      
+      // Check for page headers
+      if (line.startsWith('--- Page') || line.startsWith('--- Pagina') || line.startsWith('--- Xët')) {
+        if (currentSection) {
+          sections.push(currentSection);
+        }
+        currentSection = {
+          title: line,
+          content: []
+        };
+      } else {
+        if (!currentSection) {
+          currentSection = {
+            title: t('introduction'),
+            content: []
+          };
+        }
+        currentSection.content.push(line);
+      }
+    }
+    
+    if (currentSection) {
+      sections.push(currentSection);
+    }
+    
+    return sections;
+  };
+
+  const renderTextSections = (text, isTranslated = false) => {
+    const sections = detectSectionHeaders(text);
+    
+    return sections.map((section, index) => (
+      <div key={index} className="text-section">
+        <h4 className="section-header">{section.title}</h4>
+        <div className="section-content">
+          {section.content.map((line, lineIndex) => (
+            <p key={lineIndex} className="section-line">{line}</p>
+          ))}
+        </div>
+      </div>
+    ));
   };
 
   return (
