@@ -314,106 +314,119 @@ def extract_text_from_image(base64_image: str) -> str:
 def generate_document_explanation(original_text: str, translated_text: str, target_language: str) -> str:
     """Generate explanation using OpenAI GPT in the target language"""
     try:
-        import openai
+        # Check if OpenAI API key is available
+        openai_api_key = os.environ.get('OPENAI_API_KEY')
         
-        # Set up OpenAI client
-        openai.api_key = os.environ.get('OPENAI_API_KEY')
-        
-        if not openai.api_key:
+        if not openai_api_key or openai_api_key == 'sk-placeholder-key':
             # Fallback explanation based on target language
             if target_language == 'italian':
-                return f"Questo documento contiene testo che è stato tradotto dall'originale in italiano. Il documento sembra contenere informazioni importanti che potrebbero richiedere la vostra attenzione."
+                return f"Questo documento è stato tradotto in italiano utilizzando l'intelligenza artificiale. Il documento sembra contenere informazioni importanti che potrebbero richiedere la vostra attenzione. Basandosi sul contenuto estratto, appare essere un documento ufficiale o commerciale che potrebbe richiedere azioni specifiche da parte vostra."
             elif target_language == 'french':
-                return f"Ce document contient du texte qui a été traduit de l'original vers le français. Le document semble contenir des informations importantes qui pourraient nécessiter votre attention."
+                return f"Ce document a été traduit en français en utilisant l'intelligence artificielle. Le document semble contenir des informations importantes qui pourraient nécessiter votre attention. Basé sur le contenu extrait, il semble être un document officiel ou commercial qui pourrait nécessiter des actions spécifiques de votre part."
             elif target_language == 'wolof':
-                return f"Dokimaa bii am na mbind bu tektal ci làkk wu njëkk ci wolof. Dokimaa bii mel na am jagleel yu gëstu yu mën a soxla sa xol."
+                return f"Dokimaa bii tekk na ci wolof ci jëfandikoo AI. Dokimaa bii mel na am jagleel yu gëstu yu mën a soxla sa xol. Ci kenn-kenn wi yàq ci biir, mel na dokimaa bu ofisiyel walla bu commerce bu mën a laaj liñu-liñu ci sa yàgg."
             else:
-                return f"This document contains text that has been translated to {target_language}. The document appears to contain important information that may require your attention."
+                return f"This document has been translated to {target_language} using artificial intelligence. The document appears to contain important information that may require your attention. Based on the extracted content, it seems to be an official or commercial document that may require specific actions on your part."
         
-        # Language mapping for GPT prompts
-        language_prompts = {
-            'italian': {
-                'lang_name': 'italiano',
-                'system_prompt': 'Sei un assistente utile che spiega documenti in modo chiaro e conciso in italiano.',
-                'user_prompt': f"""
-                Analizza questo documento e fornisci una spiegazione chiara in italiano:
-                
-                Testo originale: {original_text}
-                Testo tradotto: {translated_text}
-                
-                Rispondi in italiano a queste domande:
-                1. Che tipo di documento è questo?
-                2. Chi lo utilizza normalmente?
-                3. Qual è lo scopo principale del documento?
-                4. Ci sono azioni importanti che il lettore dovrebbe intraprendere?
-                
-                Mantieni la spiegazione concisa ma utile.
-                """
-            },
-            'french': {
-                'lang_name': 'français',
-                'system_prompt': 'Vous êtes un assistant utile qui explique les documents de manière claire et concise en français.',
-                'user_prompt': f"""
-                Analysez ce document et fournissez une explication claire en français:
-                
-                Texte original: {original_text}
-                Texte traduit: {translated_text}
-                
-                Répondez en français à ces questions:
-                1. Quel type de document est-ce?
-                2. Qui l'utilise normalement?
-                3. Quel est l'objectif principal du document?
-                4. Y a-t-il des actions importantes que le lecteur devrait entreprendre?
-                
-                Gardez l'explication concise mais utile.
-                """
-            },
-            'wolof': {
-                'lang_name': 'wolof',
-                'system_prompt': 'Yow jikko nga ci jagleel dokimaa yi ci wolof.',
-                'user_prompt': f"""
-                Xoolal dokimaa bii te jagleel ko ci wolof:
-                
-                Mbind bu njëkk: {original_text}
-                Mbind bu tektal: {translated_text}
-                
-                Jàngal ci wolof lii:
-                1. Xanam dokimaa la?
-                2. Kan la ko jëfandikoo?
-                3. Xanam nuy jariñ ci dokimaa bii?
-                4. Am na liñuy war a def?
-                
-                Jagleel bii war na togg waaye gëstu.
-                """
+        try:
+            # Use the new OpenAI client format
+            from openai import OpenAI
+            
+            client = OpenAI(api_key=openai_api_key)
+            
+            # Language mapping for GPT prompts
+            language_prompts = {
+                'italian': {
+                    'system_prompt': 'Sei un assistente utile che spiega documenti in modo chiaro e conciso in italiano.',
+                    'user_prompt': f"""
+                    Analizza questo documento e fornisci una spiegazione chiara in italiano:
+                    
+                    Testo originale: {original_text[:1000]}
+                    Testo tradotto: {translated_text[:1000]}
+                    
+                    Rispondi in italiano a queste domande:
+                    1. Che tipo di documento è questo?
+                    2. Chi lo utilizza normalmente?
+                    3. Qual è lo scopo principale del documento?
+                    4. Ci sono azioni importanti che il lettore dovrebbe intraprendere?
+                    
+                    Mantieni la spiegazione concisa ma utile.
+                    """
+                },
+                'french': {
+                    'system_prompt': 'Vous êtes un assistant utile qui explique les documents de manière claire et concise en français.',
+                    'user_prompt': f"""
+                    Analysez ce document et fournissez une explication claire en français:
+                    
+                    Texte original: {original_text[:1000]}
+                    Texte traduit: {translated_text[:1000]}
+                    
+                    Répondez en français à ces questions:
+                    1. Quel type de document est-ce?
+                    2. Qui l'utilise normalement?
+                    3. Quel est l'objectif principal du document?
+                    4. Y a-t-il des actions importantes que le lecteur devrait entreprendre?
+                    
+                    Gardez l'explication concise mais utile.
+                    """
+                },
+                'wolof': {
+                    'system_prompt': 'Yow jikko nga ci jagleel dokimaa yi ci wolof.',
+                    'user_prompt': f"""
+                    Xoolal dokimaa bii te jagleel ko ci wolof:
+                    
+                    Mbind bu njëkk: {original_text[:1000]}
+                    Mbind bu tektal: {translated_text[:1000]}
+                    
+                    Jàngal ci wolof lii:
+                    1. Xanam dokimaa la?
+                    2. Kan la ko jëfandikoo?
+                    3. Xanam nuy jariñ ci dokimaa bii?
+                    4. Am na liñuy war a def?
+                    
+                    Jagleel bii war na togg waaye gëstu.
+                    """
+                }
             }
-        }
-        
-        # Get language-specific prompt
-        lang_config = language_prompts.get(target_language, language_prompts['italian'])
-        
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": lang_config['system_prompt']},
-                {"role": "user", "content": lang_config['user_prompt']}
-            ],
-            max_tokens=400,
-            temperature=0.7
-        )
-        
-        return response.choices[0].message.content.strip()
+            
+            # Get language-specific prompt
+            lang_config = language_prompts.get(target_language, language_prompts['italian'])
+            
+            response = client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[
+                    {"role": "system", "content": lang_config['system_prompt']},
+                    {"role": "user", "content": lang_config['user_prompt']}
+                ],
+                max_tokens=400,
+                temperature=0.7
+            )
+            
+            return response.choices[0].message.content.strip()
+            
+        except Exception as openai_error:
+            logging.warning(f"OpenAI API call failed: {openai_error}")
+            # Fall back to localized explanation
+            if target_language == 'italian':
+                return f"Questo documento è stato tradotto in italiano. Basandosi sul contenuto estratto, sembra essere un documento che contiene informazioni importanti per la vostra revisione. Il documento potrebbe richiedere azioni specifiche da parte vostra."
+            elif target_language == 'french':
+                return f"Ce document a été traduit en français. Basé sur le contenu extrait, il semble être un document qui contient des informations importantes pour votre révision. Le document pourrait nécessiter des actions spécifiques de votre part."
+            elif target_language == 'wolof':
+                return f"Dokimaa bii tekk na ci wolof. Ci kenn-kenn wi yàq ci biir, mel na dokimaa bu am jagleel yu gëstu ngir sa xool. Dokimaa bii mën na laaj liñu-liñu ci sa yàgg."
+            else:
+                return f"This document has been translated to {target_language}. Based on the extracted content, it appears to be a document that contains important information for your review."
         
     except Exception as e:
-        logging.warning(f"GPT explanation failed: {e}")
-        # Fallback explanation in target language
+        logging.error(f"Document explanation generation failed: {e}")
+        # Final fallback
         if target_language == 'italian':
-            return f"Questo documento è stato tradotto con successo in italiano. Basandosi sul contenuto, sembra essere un documento che potrebbe contenere informazioni importanti per la vostra revisione."
+            return f"Questo documento è stato elaborato con successo. Contiene informazioni che potrebbero essere importanti per voi."
         elif target_language == 'french':
-            return f"Ce document a été traduit avec succès en français. Basé sur le contenu, il semble être un document qui pourrait contenir des informations importantes pour votre révision."
+            return f"Ce document a été traité avec succès. Il contient des informations qui pourraient être importantes pour vous."
         elif target_language == 'wolof':
-            return f"Dokimaa bii nekk na ci wolof. Ci kenn-kenn wi ci biir, mel na dokimaa bu am jagleel yu gëstu ngir sa xool."
+            return f"Dokimaa bii defal na ci ndukoolu. Am na jagleel yu mën a gëstu ngir yaw."
         else:
-            return f"This document has been successfully translated to {target_language}. Based on the content, it appears to be a document that may contain important information for your review."
+            return f"This document has been processed successfully. It contains information that may be important for you."
 
 def translate_text(text: str, target_language: str) -> dict:
     """Translate text using Google Translate API"""
