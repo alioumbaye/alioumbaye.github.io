@@ -190,45 +190,6 @@ function App() {
               </button>
             </div>
 
-            {/* Manual Text Input Alternative */}
-            <div className="section">
-              <div className="manual-input-toggle">
-                <button
-                  className="toggle-btn"
-                  onClick={() => setShowManualInput(!showManualInput)}
-                >
-                  {showManualInput ? 'Hide' : 'Show'} Manual Text Input
-                </button>
-              </div>
-              
-              {showManualInput && (
-                <div className="manual-input-area">
-                  <h3>Or Type/Paste Text to Translate</h3>
-                  <textarea
-                    className="manual-text-input"
-                    value={manualText}
-                    onChange={(e) => setManualText(e.target.value)}
-                    placeholder="Type or paste your text here to translate..."
-                    rows="4"
-                  />
-                  <button
-                    className="translate-btn"
-                    onClick={handleTextTranslation}
-                    disabled={!selectedLanguage || !manualText.trim() || analyzing}
-                  >
-                    {analyzing ? (
-                      <>
-                        <span className="loading-spinner"></span>
-                        Translating...
-                      </>
-                    ) : (
-                      'Translate Text'
-                    )}
-                  </button>
-                </div>
-              )}
-            </div>
-
             {/* Error Message */}
             {error && (
               <div className="error-message">
