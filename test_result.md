@@ -295,6 +295,30 @@ frontend:
           agent: "testing"
           comment: "FEATURE REMOVED AS REQUESTED! ✅ Manual text input feature has been completely removed from the application. No text input areas, textareas, or manual input toggles found. Only document upload workflow remains. This change aligns with the updated requirements for automatic analysis pipeline only."
 
+  - task: "Multilingual UI Support"
+    implemented: true
+    working: true
+    file: "App.js, i18n.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "MULTILINGUAL UI FULLY TESTED! ✅ UI language selector working perfectly with Italian (🇮🇹), French (🇫🇷), and Wolof (🌍) flags at top of page. ✅ Default language is Italian (correct). ✅ All static text changes dynamically when switching languages: Italian: 'Traduzione Documenti Semplificata', French: 'Traduction de Documents Simplifiée', Wolof: 'Tektal Dokimaa ak Yaakar'. ✅ Language buttons show proper visual feedback with active states. ✅ Mobile responsiveness confirmed - UI language selector works on mobile viewport (390x844). ✅ Complete i18n integration with react-i18next working flawlessly. All UI elements translate correctly including buttons, labels, instructions, error messages, and section headers."
+
+  - task: "Redesigned Results Section with View Modes"
+    implemented: true
+    working: true
+    file: "App.js, App.css"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+        - working: true
+          agent: "testing"
+          comment: "REDESIGNED RESULTS SECTION FULLY TESTED! ✅ View mode selector with three options: Tabs (Schede), Side-by-Side (Affiancato), and Sections (Sezioni) working perfectly. ✅ Default view mode is Tabs (correct). ✅ TABS VIEW: Tab buttons for Original Text, Translated Text, Document Explanation working with proper switching functionality. ✅ SIDE-BY-SIDE VIEW: Two-column layout displaying original and translated text side by side correctly. ✅ SECTIONS VIEW: Vertical layout with translation arrows and clean section separation. ✅ Section headers automatically detected from text ('--- Page 1 ---', '--- Page 2 ---', 'Introduction'). ✅ All view modes display organized sections properly. ✅ Mobile responsiveness confirmed for all view modes. ✅ Results display cleanly with proper styling and metadata. Complete redesigned results implementation working flawlessly!"
+
 metadata:
   created_by: "main_agent"
   version: "1.0"
