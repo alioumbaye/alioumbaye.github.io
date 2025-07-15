@@ -166,7 +166,42 @@ function App() {
     return sections;
   };
 
-  const renderTextSections = (text, isTranslated = false) => {
+  const handleDownloadPDF = async () => {
+    try {
+      const response = await axios.post(`${API}/export-pdf`, {
+        original_text: result.original_text,
+        translated_text: result.translated_text,
+        target_language: selectedLanguage,
+        filename: uploadedFile.name,
+        explanation: result.explanation
+      }, {
+        responseType: 'blob'
+      });
+
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      
+      // Generate filename
+      const baseName = uploadedFile.name.split('.')[0];
+      const languageSuffix = {
+        'italian': 'IT',
+        'french': 'FR',
+        'wolof': 'WO'
+      }[selectedLanguage] || selectedLanguage.toUpperCase();
+      
+      link.setAttribute('download', `${baseName}_translated_${languageSuffix}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('PDF download failed:', error);
+      setError('Failed to generate PDF download');
+    }
+  };
     const sections = detectSectionHeaders(text);
     
     return sections.map((section, index) => (
