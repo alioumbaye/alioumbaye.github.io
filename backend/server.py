@@ -68,19 +68,42 @@ class TranslationHistory(BaseModel):
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
 # Helper functions
-def extract_text_from_image(base64_image: str) -> str:
-    """Extract text from image using Google Cloud Vision API"""
+def is_pdf_file(base64_data: str) -> bool:
+    """Check if the base64 data represents a PDF file"""
     try:
         # Remove data URL prefix if present
-        if 'base64,' in base64_image:
-            base64_image = base64_image.split('base64,')[1]
+        if 'base64,' in base64_data:
+            base64_data = base64_data.split('base64,')[1]
         
-        # Validate base64 string
-        try:
-            base64.b64decode(base64_image)
-        except Exception:
-            raise Exception("Invalid base64 image data")
+        # Decode base64 to bytes
+        file_bytes = base64.b64decode(base64_data)
         
+        # Check PDF magic bytes
+        return file_bytes.startswith(b'%PDF')
+    except Exception:
+        return False
+
+def convert_pdf_to_images(pdf_bytes: bytes) -> List[str]:
+    """Convert PDF bytes to list of base64 image strings"""
+    try:
+        # Convert PDF to PIL images
+        images = convert_from_bytes(pdf_bytes, dpi=300, fmt='png')
+        
+        base64_images = []
+        for image in images:
+            # Convert PIL image to base64
+            buffer = io.BytesIO()
+            image.save(buffer, format='PNG')
+            img_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+            base64_images.append(img_base64)
+        
+        return base64_images
+    except Exception as e:
+        raise Exception(f"PDF conversion failed: {str(e)}")
+
+def extract_text_from_single_image(base64_image: str) -> str:
+    """Extract text from a single image using Google Cloud Vision API"""
+    try:
         # Use standard Google Cloud Vision API with API key
         url = f"https://vision.googleapis.com/v1/images:annotate?key={GOOGLE_API_KEY}"
         
@@ -123,6 +146,55 @@ def extract_text_from_image(base64_image: str) -> str:
                 return resp['textAnnotations'][0]['description']
         
         return ""
+        
+    except Exception as e:
+        raise Exception(f"Text extraction failed: {str(e)}")
+
+def extract_text_from_image(base64_image: str) -> str:
+    """Extract text from image or PDF using Google Cloud Vision API"""
+    try:
+        # Remove data URL prefix if present
+        if 'base64,' in base64_image:
+            base64_data = base64_image.split('base64,')[1]
+        else:
+            base64_data = base64_image
+        
+        # Validate base64 string
+        try:
+            file_bytes = base64.b64decode(base64_data)
+        except Exception:
+            raise Exception("Invalid base64 image data")
+        
+        # Check if it's a PDF file
+        if is_pdf_file(base64_image):
+            logging.info("Processing PDF file...")
+            
+            # Convert PDF to images
+            pdf_images = convert_pdf_to_images(file_bytes)
+            
+            if not pdf_images:
+                raise Exception("Could not convert PDF to images")
+            
+            # Extract text from each page
+            all_text = []
+            for i, img_base64 in enumerate(pdf_images):
+                try:
+                    page_text = extract_text_from_single_image(img_base64)
+                    if page_text.strip():
+                        all_text.append(f"--- Page {i+1} ---\n{page_text}")
+                except Exception as e:
+                    logging.warning(f"Failed to extract text from page {i+1}: {e}")
+                    continue
+            
+            if not all_text:
+                raise Exception("No text found in any PDF pages")
+            
+            return "\n\n".join(all_text)
+        
+        else:
+            # Handle as regular image
+            logging.info("Processing image file...")
+            return extract_text_from_single_image(base64_data)
         
     except Exception as e:
         raise Exception(f"Text extraction failed: {str(e)}")
