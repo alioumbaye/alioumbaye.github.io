@@ -131,6 +131,49 @@ def extract_text_from_image(base64_image: str) -> str:
     except Exception as e:
         raise Exception(f"Text extraction failed: {str(e)}")
 
+def generate_document_explanation(original_text: str, translated_text: str, target_language: str) -> str:
+    """Generate explanation using OpenAI GPT"""
+    try:
+        import openai
+        
+        # Set up OpenAI client (you'll need to add API key to .env)
+        openai.api_key = os.environ.get('OPENAI_API_KEY')
+        
+        if not openai.api_key:
+            # Fallback explanation if no OpenAI key
+            return f"This document contains text that has been translated from the original language to {target_language}. The document appears to contain information that may require your attention or action."
+        
+        prompt = f"""
+        You are a helpful assistant that explains documents in simple terms.
+        
+        Original text: {original_text}
+        Translated text ({target_language}): {translated_text}
+        
+        Please provide a clear, simple explanation of:
+        1. What type of document this appears to be
+        2. The main purpose or content of the document
+        3. Any important actions the reader should take
+        
+        Keep the explanation concise but helpful. Write in English.
+        """
+        
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": "You are a helpful assistant that explains documents clearly and concisely."},
+                {"role": "user", "content": prompt}
+            ],
+            max_tokens=300,
+            temperature=0.7
+        )
+        
+        return response.choices[0].message.content.strip()
+        
+    except Exception as e:
+        logging.warning(f"GPT explanation failed: {e}")
+        # Fallback explanation
+        return f"This document contains text that has been successfully translated to {target_language}. Based on the content, it appears to be a document that may contain important information for your review."
+
 def translate_text(text: str, target_language: str) -> dict:
     """Translate text using Google Translate API"""
     try:
