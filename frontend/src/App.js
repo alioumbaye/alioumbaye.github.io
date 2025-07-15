@@ -182,10 +182,27 @@ function App() {
 
   return (
     <div className="App">
-      {/* Header */}
+      {/* Header with UI Language Selector */}
       <div className="header">
-        <h1 className="app-title">TAHAWU AI</h1>
-        <p className="app-subtitle">Document Translation Made Easy</p>
+        <div className="header-top">
+          <div className="ui-language-selector">
+            <span className="ui-lang-label">{t('uiLanguage')}:</span>
+            <div className="ui-language-buttons">
+              {uiLanguages.map((lang) => (
+                <button
+                  key={lang.code}
+                  className={`ui-lang-btn ${uiLanguage === lang.code ? 'active' : ''}`}
+                  onClick={() => handleUILanguageChange(lang.code)}
+                >
+                  <span className="flag">{lang.flag}</span>
+                  <span className="lang-name">{lang.name}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+        <h1 className="app-title">{t('appTitle')}</h1>
+        <p className="app-subtitle">{t('appSubtitle')}</p>
       </div>
 
       {/* Main Content */}
@@ -194,7 +211,7 @@ function App() {
           <>
             {/* Language Selection */}
             <div className="section">
-              <h2 className="section-title">Select Target Language</h2>
+              <h2 className="section-title">{t('selectLanguage')}</h2>
               <div className="language-buttons">
                 {languages.map((lang) => (
                   <button
@@ -211,7 +228,7 @@ function App() {
 
             {/* File Upload */}
             <div className="section">
-              <h2 className="section-title">Upload Document</h2>
+              <h2 className="section-title">{t('uploadDocument')}</h2>
               <div className="upload-container">
                 <input
                   type="file"
@@ -226,15 +243,15 @@ function App() {
                   ) : (
                     <div className="upload-placeholder">
                       <div className="upload-icon">📄</div>
-                      <p>Upload an image or PDF</p>
-                      <p className="upload-hint">Supports JPEG, PNG, GIF, PDF (max 5MB)</p>
+                      <p>{t('uploadPlaceholder')}</p>
+                      <p className="upload-hint">{t('uploadHint')}</p>
                     </div>
                   )}
                 </div>
                 {uploadedFile && (
                   <div className="file-info">
-                    <p><strong>Selected:</strong> {uploadedFile.name}</p>
-                    <p><strong>Size:</strong> {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB</p>
+                    <p><strong>{t('selectedFile')}</strong> {uploadedFile.name}</p>
+                    <p><strong>{t('fileSize')}</strong> {(uploadedFile.size / 1024 / 1024).toFixed(2)} MB</p>
                   </div>
                 )}
               </div>
@@ -250,10 +267,10 @@ function App() {
                 {analyzing ? (
                   <>
                     <span className="loading-spinner"></span>
-                    Analyzing Document...
+                    {t('analyzingDocument')}
                   </>
                 ) : (
-                  'Analyze Document'
+                  t('analyzeDocument')
                 )}
               </button>
             </div>
@@ -270,50 +287,143 @@ function App() {
           /* Results */
           <div className="results-section">
             <div className="result-header">
-              <h2>Translation Complete!</h2>
+              <h2>{t('translationComplete')}</h2>
               <button className="reset-btn" onClick={resetApp}>
-                Start New Translation
+                {t('startNewTranslation')}
               </button>
             </div>
 
-            <div className="result-content">
-              <div className="result-card">
-                <h3>Original Text ({result.detected_language?.toUpperCase() || 'Unknown'})</h3>
-                <div className="text-content">
-                  {result.original_text}
+            {/* View Mode Selector */}
+            <div className="view-mode-selector">
+              <span className="view-label">{t('viewOptions')}:</span>
+              <div className="view-buttons">
+                <button
+                  className={`view-btn ${viewMode === 'tabs' ? 'active' : ''}`}
+                  onClick={() => setViewMode('tabs')}
+                >
+                  {t('tabs')}
+                </button>
+                <button
+                  className={`view-btn ${viewMode === 'sideBySide' ? 'active' : ''}`}
+                  onClick={() => setViewMode('sideBySide')}
+                >
+                  {t('sideBySide')}
+                </button>
+                <button
+                  className={`view-btn ${viewMode === 'sections' ? 'active' : ''}`}
+                  onClick={() => setViewMode('sections')}
+                >
+                  {t('sections')}
+                </button>
+              </div>
+            </div>
+
+            {/* Results Display */}
+            <div className={`result-content ${viewMode}`}>
+              {viewMode === 'tabs' && (
+                <div className="tabs-container">
+                  <div className="tab-buttons">
+                    <button className="tab-btn active" data-tab="original">
+                      {t('originalText')}
+                    </button>
+                    <button className="tab-btn" data-tab="translated">
+                      {t('translatedText')}
+                    </button>
+                    <button className="tab-btn" data-tab="explanation">
+                      {t('documentExplanation')}
+                    </button>
+                  </div>
+                  <div className="tab-content">
+                    <div className="tab-pane active" id="original">
+                      <div className="result-card">
+                        <h3>{t('originalText')} ({result.detected_language?.toUpperCase() || 'Unknown'})</h3>
+                        <div className="text-content-sectioned">
+                          {renderTextSections(result.original_text)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="tab-pane" id="translated">
+                      <div className="result-card translated">
+                        <h3>{t('translatedText')}</h3>
+                        <div className="text-content-sectioned">
+                          {renderTextSections(result.translated_text, true)}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="tab-pane" id="explanation">
+                      <div className="result-card explanation">
+                        <h3>{t('documentExplanation')}</h3>
+                        <div className="text-content">
+                          {result.explanation}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="translation-arrow">
-                <div className="arrow">↓</div>
-                <div className="arrow-label">Translated to {selectedLanguage}</div>
-              </div>
-
-              <div className="result-card translated">
-                <h3>Translated Text</h3>
-                <div className="text-content">
-                  {result.translated_text}
+              {viewMode === 'sideBySide' && (
+                <div className="side-by-side-container">
+                  <div className="side-column">
+                    <div className="result-card">
+                      <h3>{t('originalText')} ({result.detected_language?.toUpperCase() || 'Unknown'})</h3>
+                      <div className="text-content-sectioned">
+                        {renderTextSections(result.original_text)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="side-column">
+                    <div className="result-card translated">
+                      <h3>{t('translatedText')}</h3>
+                      <div className="text-content-sectioned">
+                        {renderTextSections(result.translated_text, true)}
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="translation-arrow">
-                <div className="arrow">↓</div>
-                <div className="arrow-label">Document Analysis</div>
-              </div>
+              {viewMode === 'sections' && (
+                <div className="sections-container">
+                  <div className="result-card">
+                    <h3>{t('originalText')} ({result.detected_language?.toUpperCase() || 'Unknown'})</h3>
+                    <div className="text-content-sectioned">
+                      {renderTextSections(result.original_text)}
+                    </div>
+                  </div>
 
-              <div className="result-card explanation">
-                <h3>Document Explanation</h3>
-                <div className="text-content">
-                  {result.explanation}
+                  <div className="translation-arrow">
+                    <div className="arrow">↓</div>
+                    <div className="arrow-label">{t('translatedTo')} {selectedLanguage}</div>
+                  </div>
+
+                  <div className="result-card translated">
+                    <h3>{t('translatedText')}</h3>
+                    <div className="text-content-sectioned">
+                      {renderTextSections(result.translated_text, true)}
+                    </div>
+                  </div>
+
+                  <div className="translation-arrow">
+                    <div className="arrow">↓</div>
+                    <div className="arrow-label">{t('documentAnalysis')}</div>
+                  </div>
+
+                  <div className="result-card explanation">
+                    <h3>{t('documentExplanation')}</h3>
+                    <div className="text-content">
+                      {result.explanation}
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
+            </div>
 
-              <div className="result-meta">
-                <p><strong>File:</strong> {uploadedFile?.name}</p>
-                <p><strong>Detected Language:</strong> {result.detected_language?.toUpperCase() || 'Unknown'}</p>
-                <p><strong>Target Language:</strong> {selectedLanguage.charAt(0).toUpperCase() + selectedLanguage.slice(1)}</p>
-                <p><strong>Processed:</strong> {new Date(result.timestamp).toLocaleString()}</p>
-              </div>
+            <div className="result-meta">
+              <p><strong>{t('fileName')}</strong> {uploadedFile?.name}</p>
+              <p><strong>{t('detectedLanguage')}</strong> {result.detected_language?.toUpperCase() || 'Unknown'}</p>
+              <p><strong>{t('targetLanguage')}</strong> {selectedLanguage.charAt(0).toUpperCase() + selectedLanguage.slice(1)}</p>
+              <p><strong>{t('processedAt')}</strong> {new Date(result.timestamp).toLocaleString()}</p>
             </div>
           </div>
         )}
