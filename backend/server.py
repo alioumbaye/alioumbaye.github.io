@@ -73,6 +73,13 @@ class TranslationHistory(BaseModel):
     filename: str
     timestamp: datetime = Field(default_factory=datetime.utcnow)
 
+class PDFExportRequest(BaseModel):
+    original_text: str
+    translated_text: str
+    target_language: str
+    filename: str
+    explanation: str
+
 # Helper functions
 def is_pdf_file(base64_data: str) -> bool:
     """Check if the base64 data represents a PDF file"""
