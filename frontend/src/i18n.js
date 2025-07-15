@@ -56,6 +56,9 @@ const resources = {
       tabs: "Schede",
       sections: "Sezioni",
       
+      // PDF Download
+      downloadPDF: "Scarica PDF Tradotto",
+      
       // Section Headers
       page: "Pagina",
       introduction: "Introduzione",
