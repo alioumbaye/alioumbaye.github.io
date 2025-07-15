@@ -324,41 +324,56 @@ function App() {
               {viewMode === 'tabs' && (
                 <div className="tabs-container">
                   <div className="tab-buttons">
-                    <button className="tab-btn active" data-tab="original">
+                    <button 
+                      className={`tab-btn ${activeTab === 'original' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('original')}
+                    >
                       {t('originalText')}
                     </button>
-                    <button className="tab-btn" data-tab="translated">
+                    <button 
+                      className={`tab-btn ${activeTab === 'translated' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('translated')}
+                    >
                       {t('translatedText')}
                     </button>
-                    <button className="tab-btn" data-tab="explanation">
+                    <button 
+                      className={`tab-btn ${activeTab === 'explanation' ? 'active' : ''}`}
+                      onClick={() => setActiveTab('explanation')}
+                    >
                       {t('documentExplanation')}
                     </button>
                   </div>
                   <div className="tab-content">
-                    <div className="tab-pane active" id="original">
-                      <div className="result-card">
-                        <h3>{t('originalText')} ({result.detected_language?.toUpperCase() || 'Unknown'})</h3>
-                        <div className="text-content-sectioned">
-                          {renderTextSections(result.original_text)}
+                    {activeTab === 'original' && (
+                      <div className="tab-pane active">
+                        <div className="result-card">
+                          <h3>{t('originalText')} ({result.detected_language?.toUpperCase() || 'Unknown'})</h3>
+                          <div className="text-content-sectioned">
+                            {renderTextSections(result.original_text)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="tab-pane" id="translated">
-                      <div className="result-card translated">
-                        <h3>{t('translatedText')}</h3>
-                        <div className="text-content-sectioned">
-                          {renderTextSections(result.translated_text, true)}
+                    )}
+                    {activeTab === 'translated' && (
+                      <div className="tab-pane active">
+                        <div className="result-card translated">
+                          <h3>{t('translatedText')}</h3>
+                          <div className="text-content-sectioned">
+                            {renderTextSections(result.translated_text, true)}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                    <div className="tab-pane" id="explanation">
-                      <div className="result-card explanation">
-                        <h3>{t('documentExplanation')}</h3>
-                        <div className="text-content">
-                          {result.explanation}
+                    )}
+                    {activeTab === 'explanation' && (
+                      <div className="tab-pane active">
+                        <div className="result-card explanation">
+                          <h3>{t('documentExplanation')}</h3>
+                          <div className="text-content">
+                            {result.explanation}
+                          </div>
                         </div>
                       </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               )}
