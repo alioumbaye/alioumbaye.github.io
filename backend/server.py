@@ -246,11 +246,19 @@ async def analyze_document(request: DocumentAnalysisRequest):
         # Translate the extracted text
         translation_result = translate_text(extracted_text, request.target_language)
         
+        # Generate GPT explanation
+        explanation = generate_document_explanation(
+            extracted_text, 
+            translation_result['translated_text'], 
+            request.target_language
+        )
+        
         # Create response
         response_data = DocumentAnalysisResponse(
             success=True,
             original_text=extracted_text,
             translated_text=translation_result['translated_text'],
+            explanation=explanation,
             detected_language=translation_result['detected_language'],
             target_language=request.target_language,
             timestamp=datetime.utcnow()
