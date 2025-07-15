@@ -273,6 +273,9 @@ frontend:
         - working: true
           agent: "testing"
           comment: "RESULTS DISPLAY EXCELLENT! Shows original text (EN), translated text (Italian), detected language, target language, and timestamp. Clean card-based layout with visual arrow indicating translation direction. Reset button works perfectly - returns to initial state. All metadata displayed correctly. Beautiful and functional design!"
+        - working: true
+          agent: "testing"
+          comment: "UPDATED RESULTS DISPLAY PERFECT! ✅ Three result cards displaying correctly: 1) Original Text (EN) with blue border, 2) Translated Text with green border, 3) Document Explanation with purple styling (.result-card.explanation). ✅ Translation arrows with proper labels ('Translated to [language]', 'Document Analysis'). ✅ Complete metadata: File name, detected language, target language, timestamp. ✅ Reset button ('Start New Translation') works perfectly. ✅ All visual styling consistent with purple gradient theme. New explanation card integration seamless!"
 
   - task: "Manual Text Input Feature"
     implemented: true
