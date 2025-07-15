@@ -228,6 +228,18 @@ function App() {
                 </div>
               </div>
 
+              <div className="translation-arrow">
+                <div className="arrow">↓</div>
+                <div className="arrow-label">Document Analysis</div>
+              </div>
+
+              <div className="result-card explanation">
+                <h3>Document Explanation</h3>
+                <div className="text-content">
+                  {result.explanation}
+                </div>
+              </div>
+
               <div className="result-meta">
                 <p><strong>File:</strong> {uploadedFile?.name}</p>
                 <p><strong>Detected Language:</strong> {result.detected_language?.toUpperCase() || 'Unknown'}</p>
