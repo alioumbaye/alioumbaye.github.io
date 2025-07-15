@@ -326,9 +326,14 @@ function App() {
           <div className="results-section">
             <div className="result-header">
               <h2>{t('translationComplete')}</h2>
-              <button className="reset-btn" onClick={resetApp}>
-                {t('startNewTranslation')}
-              </button>
+              <div className="header-actions">
+                <button className="download-pdf-btn" onClick={handleDownloadPDF}>
+                  📄 {t('downloadPDF')}
+                </button>
+                <button className="reset-btn" onClick={resetApp}>
+                  {t('startNewTranslation')}
+                </button>
+              </div>
             </div>
 
             {/* View Mode Selector */}
