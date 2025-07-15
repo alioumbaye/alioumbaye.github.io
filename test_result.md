@@ -303,7 +303,7 @@ metadata:
 
 test_plan:
   current_focus:
-    - "All core functionality confirmed working"
+    - "Updated workflow testing completed successfully"
   stuck_tasks: []
   test_all: false
   test_priority: "high_first"
