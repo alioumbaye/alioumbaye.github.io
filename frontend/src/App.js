@@ -12,8 +12,6 @@ function App() {
   const [analyzing, setAnalyzing] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
-  const [manualText, setManualText] = useState('');
-  const [showManualInput, setShowManualInput] = useState(false);
   const fileInputRef = useRef(null);
 
   const languages = [
