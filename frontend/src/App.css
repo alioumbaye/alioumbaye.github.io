@@ -468,6 +468,11 @@ body {
   background: #f1f8e9;
 }
 
+.result-card.explanation {
+  border-left-color: #6f42c1;
+  background: #f8f5ff;
+}
+
 .result-card h3 {
   color: #333;
   margin-bottom: 1rem;
