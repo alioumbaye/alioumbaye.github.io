@@ -123,6 +123,9 @@ const resources = {
       tabs: "Onglets",
       sections: "Sections",
       
+      // PDF Download
+      downloadPDF: "Télécharger PDF Traduit",
+      
       // Section Headers
       page: "Page",
       introduction: "Introduction",
