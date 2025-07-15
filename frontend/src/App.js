@@ -17,6 +17,7 @@ function App() {
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [viewMode, setViewMode] = useState('tabs'); // 'tabs', 'sideBySide', 'sections'
+  const [activeTab, setActiveTab] = useState('original');
   const fileInputRef = useRef(null);
 
   const uiLanguages = [
