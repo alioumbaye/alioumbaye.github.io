@@ -1,5 +1,7 @@
 import React, { useState, useRef } from "react";
+import { useTranslation } from 'react-i18next';
 import "./App.css";
+import "./i18n";
 import axios from "axios";
 
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL;
