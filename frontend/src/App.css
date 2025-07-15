@@ -78,13 +78,19 @@ body {
   font-size: 0.8rem;
   font-weight: 500;
 }
+/* Header Styles */
 .header {
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
   color: white;
-  padding: 2rem 1rem;
-  text-align: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.header-top {
+  display: flex;
+  justify-content: flex-end;
+  padding: 1rem 2rem;
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .app-title {
@@ -92,12 +98,16 @@ body {
   font-weight: 700;
   margin-bottom: 0.5rem;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  text-align: center;
+  padding: 1rem;
 }
 
 .app-subtitle {
   font-size: 1.2rem;
   opacity: 0.9;
   font-weight: 300;
+  text-align: center;
+  padding-bottom: 2rem;
 }
 
 /* Main Content */
