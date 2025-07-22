@@ -376,7 +376,7 @@ def extract_text_from_image(base64_image: str) -> str:
         raise Exception(f"Text extraction failed: {str(e)}")
 
 def generate_document_explanation(original_text: str, translated_text: str, target_language: str) -> str:
-    """Generate detailed, context-aware explanation using OpenAI GPT in the target language"""
+    """Generate detailed, context-aware explanation using improved GPT prompt template"""
     try:
         # Check if OpenAI API key is available
         openai_api_key = os.environ.get('OPENAI_API_KEY')
@@ -391,109 +391,53 @@ def generate_document_explanation(original_text: str, translated_text: str, targ
             
             client = OpenAI(api_key=openai_api_key)
             
-            # Create enhanced, context-aware prompts for each language
-            language_prompts = {
-                'italian': {
-                    'system_prompt': '''Sei un esperto analista di documenti che aiuta le persone a comprendere documenti complessi in italiano. 
-                    Fornisci spiegazioni dettagliate, pratiche e utili che aiutino le persone a capire esattamente cosa devono fare con il documento.''',
-                    'user_prompt': f"""
-                    Analizza attentamente questo documento e fornisci una spiegazione completa e dettagliata in italiano:
-
-                    TESTO DEL DOCUMENTO:
-                    {translated_text[:1500]}
-
-                    Fornisci una spiegazione strutturata che risponda a queste domande in modo dettagliato:
-
-                    1. **TIPO DI DOCUMENTO**: Che tipo di documento è esattamente? (es: fattura, contratto, modulo, certificato, etc.)
-
-                    2. **SCOPO E FUNZIONE**: A cosa serve questo documento? Perché è stato creato?
-
-                    3. **CHI DEVE USARLO**: Chi sono le persone che tipicamente ricevono, compilano o utilizzano questo documento?
-
-                    4. **QUANDO SI USA**: In quali situazioni o momenti questo documento viene utilizzato?
-
-                    5. **AZIONI RICHIESTE**: Cosa deve fare esattamente la persona che riceve questo documento? Ci sono scadenze? Deve firmare, pagare, rispondere, o compilare qualcosa?
-
-                    6. **INFORMAZIONI IMPORTANTI**: Quali sono le informazioni più importanti da notare? Ci sono numeri, date, importi o dettagli critici?
-
-                    7. **PROSSIMI PASSI**: Quali sono i passi successivi consigliati dopo aver letto questo documento?
-
-                    Scrivi in modo chiaro, dettagliato e pratico. Usa un linguaggio accessibile ma professionale.
-                    """
-                },
-                'french': {
-                    'system_prompt': '''Vous êtes un expert analyste de documents qui aide les gens à comprendre des documents complexes en français. 
-                    Fournissez des explications détaillées, pratiques et utiles qui aident les gens à comprendre exactement ce qu'ils doivent faire avec le document.''',
-                    'user_prompt': f"""
-                    Analysez attentivement ce document et fournissez une explication complète et détaillée en français:
-
-                    TEXTE DU DOCUMENT:
-                    {translated_text[:1500]}
-
-                    Fournissez une explication structurée qui répond à ces questions de manière détaillée:
-
-                    1. **TYPE DE DOCUMENT**: De quel type de document s'agit-il exactement? (ex: facture, contrat, formulaire, certificat, etc.)
-
-                    2. **OBJECTIF ET FONCTION**: À quoi sert ce document? Pourquoi a-t-il été créé?
-
-                    3. **QUI DOIT L'UTILISER**: Qui sont les personnes qui reçoivent, remplissent ou utilisent typiquement ce document?
-
-                    4. **QUAND L'UTILISER**: Dans quelles situations ou moments ce document est-il utilisé?
-
-                    5. **ACTIONS REQUISES**: Que doit faire exactement la personne qui reçoit ce document? Y a-t-il des échéances? Doit-elle signer, payer, répondre, ou remplir quelque chose?
-
-                    6. **INFORMATIONS IMPORTANTES**: Quelles sont les informations les plus importantes à noter? Y a-t-il des numéros, dates, montants ou détails critiques?
-
-                    7. **PROCHAINES ÉTAPES**: Quelles sont les étapes suivantes recommandées après avoir lu ce document?
-
-                    Écrivez de manière claire, détaillée et pratique. Utilisez un langage accessible mais professionnel.
-                    """
-                },
-                'wolof': {
-                    'system_prompt': '''Yaw bokk naa ci xam-xam dokimaa yi ngir jëkkal nit ñi ci gëstu dokimaa yu gëstu ci wolof. 
-                    Jox jagleel yu mat, yu jëfandikoo te yu mën a jëkkal nit ñi ci xam loolu lan la war a def ak dokimaa bii.''',
-                    'user_prompt': f"""
-                    Xoolal lépp dokimaa bii te jox jagleel bu mat ak bu gëstu ci wolof:
-
-                    MBIND GU CI DOKIMAA:
-                    {translated_text[:1500]}
-
-                    Jox jagleel bu sotti bu jàngal lii yu mat:
-
-                    1. **NDAM DOKIMAA**: Lan dokimaa la? (sax: bili, ndimbalante, formulaire, sertifika, etc.)
-
-                    2. **JARIÑ AK LIGGÉEY**: Lan la dokimaa bii jëfandikoo? Kuy koy defal ak luy?
-
-                    3. **KAN LA WAR A KO JËFANDIKOO**: Kan nit ñi ñuy ko ko am, koy fey walla koy jëfandikoo?
-
-                    4. **KAÑU LA KO JËFANDIKOO**: Ci ban xeetu walla kañu la dokimaa bii ko jëfandikoo?
-
-                    5. **LI LA WAR A DEF**: Lan la kenn ku ko am a war a def? Am na deadline? War na siine, fey, jàngal, walla fey?
-
-                    6. **JAGLEEL YU GËSTU**: Yan jagleel yu gëstu ci biir? Am na nimero, bis, xaalis walla cistaaraan yu gëstu?
-
-                    7. **LOOLU MU JËKKI**: Yan tànn yu ñu mooy jàngal bu ma jàng dokimaa bii?
-
-                    Bind ci yoon bu mat, bu toll ak bu mën a jëfandikoo. Jëfandikoo làkk bu naan-naan waaye bu professionnel.
-                    """
-                }
+            # Language mapping for the improved prompt template
+            language_names = {
+                'italian': 'italiano',
+                'french': 'français', 
+                'wolof': 'wolof'
             }
             
-            # Get language-specific prompt
-            lang_config = language_prompts.get(target_language, language_prompts['italian'])
+            selected_language = language_names.get(target_language, target_language)
             
+            # Create the improved, more structured prompt
+            system_prompt = f"""You are a multilingual assistant helping users understand official or technical documents. The user has uploaded a document translated to {selected_language}.
+
+Your task is to:
+1. Carefully read and analyze the content
+2. Identify the type of document (questionnaire, letter, contract, training module, invoice, form, certificate, etc.)
+3. Explain the purpose of the document and what the user is expected to do with it
+4. Highlight key details (dates, names, actions, obligations, amounts, deadlines)
+5. If the document includes questions or multiple-choice, explain how to respond
+6. Write the explanation in {selected_language}, using a clear and helpful tone
+
+Important: Avoid repeating the full text. Instead, summarize and explain meaning and action points."""
+
+            user_prompt = f"""Please analyze this document and provide a helpful explanation:
+
+DOCUMENT CONTENT:
+{translated_text[:2000]}
+
+Please provide a clear, structured explanation in {selected_language} that helps the user understand:
+- What type of document this is
+- What they need to do with it
+- Any important dates, deadlines, or actions required
+- How to properly respond if it contains questions or forms
+
+Focus on being practical and actionable rather than just descriptive."""
+
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
-                    {"role": "system", "content": lang_config['system_prompt']},
-                    {"role": "user", "content": lang_config['user_prompt']}
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": user_prompt}
                 ],
-                max_tokens=600,  # Increased for more detailed explanations
-                temperature=0.3  # Lower temperature for more focused, consistent responses
+                max_tokens=650,  # Increased for more comprehensive explanations
+                temperature=0.2  # Lower for more consistent, focused responses
             )
             
             explanation = response.choices[0].message.content.strip()
-            logging.info(f"Generated GPT explanation in {target_language}: {len(explanation)} characters")
+            logging.info(f"Generated improved GPT explanation in {target_language}: {len(explanation)} characters")
             return explanation
             
         except Exception as openai_error:
