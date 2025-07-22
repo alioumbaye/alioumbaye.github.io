@@ -376,21 +376,14 @@ def extract_text_from_image(base64_image: str) -> str:
         raise Exception(f"Text extraction failed: {str(e)}")
 
 def generate_document_explanation(original_text: str, translated_text: str, target_language: str) -> str:
-    """Generate explanation using OpenAI GPT in the target language"""
+    """Generate detailed, context-aware explanation using OpenAI GPT in the target language"""
     try:
         # Check if OpenAI API key is available
         openai_api_key = os.environ.get('OPENAI_API_KEY')
         
         if not openai_api_key or openai_api_key == 'sk-placeholder-key':
-            # Fallback explanation based on target language
-            if target_language == 'italian':
-                return f"Questo documento è stato tradotto in italiano utilizzando l'intelligenza artificiale. Il documento sembra contenere informazioni importanti che potrebbero richiedere la vostra attenzione. Basandosi sul contenuto estratto, appare essere un documento ufficiale o commerciale che potrebbe richiedere azioni specifiche da parte vostra."
-            elif target_language == 'french':
-                return f"Ce document a été traduit en français en utilisant l'intelligence artificielle. Le document semble contenir des informations importantes qui pourraient nécessiter votre attention. Basé sur le contenu extrait, il semble être un document officiel ou commercial qui pourrait nécessiter des actions spécifiques de votre part."
-            elif target_language == 'wolof':
-                return f"Dokimaa bii tekk na ci wolof ci jëfandikoo AI. Dokimaa bii mel na am jagleel yu gëstu yu mën a soxla sa xol. Ci kenn-kenn wi yàq ci biir, mel na dokimaa bu ofisiyel walla bu commerce bu mën a laaj liñu-liñu ci sa yàgg."
-            else:
-                return f"This document has been translated to {target_language} using artificial intelligence. The document appears to contain important information that may require your attention. Based on the extracted content, it seems to be an official or commercial document that may require specific actions on your part."
+            # Enhanced fallback explanations based on target language
+            return get_enhanced_fallback_explanation(original_text, translated_text, target_language)
         
         try:
             # Use the new OpenAI client format
@@ -398,57 +391,90 @@ def generate_document_explanation(original_text: str, translated_text: str, targ
             
             client = OpenAI(api_key=openai_api_key)
             
-            # Language mapping for GPT prompts
+            # Create enhanced, context-aware prompts for each language
             language_prompts = {
                 'italian': {
-                    'system_prompt': 'Sei un assistente utile che spiega documenti in modo chiaro e conciso in italiano.',
+                    'system_prompt': '''Sei un esperto analista di documenti che aiuta le persone a comprendere documenti complessi in italiano. 
+                    Fornisci spiegazioni dettagliate, pratiche e utili che aiutino le persone a capire esattamente cosa devono fare con il documento.''',
                     'user_prompt': f"""
-                    Analizza questo documento e fornisci una spiegazione chiara in italiano:
-                    
-                    Testo originale: {original_text[:1000]}
-                    Testo tradotto: {translated_text[:1000]}
-                    
-                    Rispondi in italiano a queste domande:
-                    1. Che tipo di documento è questo?
-                    2. Chi lo utilizza normalmente?
-                    3. Qual è lo scopo principale del documento?
-                    4. Ci sono azioni importanti che il lettore dovrebbe intraprendere?
-                    
-                    Mantieni la spiegazione concisa ma utile.
+                    Analizza attentamente questo documento e fornisci una spiegazione completa e dettagliata in italiano:
+
+                    TESTO DEL DOCUMENTO:
+                    {translated_text[:1500]}
+
+                    Fornisci una spiegazione strutturata che risponda a queste domande in modo dettagliato:
+
+                    1. **TIPO DI DOCUMENTO**: Che tipo di documento è esattamente? (es: fattura, contratto, modulo, certificato, etc.)
+
+                    2. **SCOPO E FUNZIONE**: A cosa serve questo documento? Perché è stato creato?
+
+                    3. **CHI DEVE USARLO**: Chi sono le persone che tipicamente ricevono, compilano o utilizzano questo documento?
+
+                    4. **QUANDO SI USA**: In quali situazioni o momenti questo documento viene utilizzato?
+
+                    5. **AZIONI RICHIESTE**: Cosa deve fare esattamente la persona che riceve questo documento? Ci sono scadenze? Deve firmare, pagare, rispondere, o compilare qualcosa?
+
+                    6. **INFORMAZIONI IMPORTANTI**: Quali sono le informazioni più importanti da notare? Ci sono numeri, date, importi o dettagli critici?
+
+                    7. **PROSSIMI PASSI**: Quali sono i passi successivi consigliati dopo aver letto questo documento?
+
+                    Scrivi in modo chiaro, dettagliato e pratico. Usa un linguaggio accessibile ma professionale.
                     """
                 },
                 'french': {
-                    'system_prompt': 'Vous êtes un assistant utile qui explique les documents de manière claire et concise en français.',
+                    'system_prompt': '''Vous êtes un expert analyste de documents qui aide les gens à comprendre des documents complexes en français. 
+                    Fournissez des explications détaillées, pratiques et utiles qui aident les gens à comprendre exactement ce qu'ils doivent faire avec le document.''',
                     'user_prompt': f"""
-                    Analysez ce document et fournissez une explication claire en français:
-                    
-                    Texte original: {original_text[:1000]}
-                    Texte traduit: {translated_text[:1000]}
-                    
-                    Répondez en français à ces questions:
-                    1. Quel type de document est-ce?
-                    2. Qui l'utilise normalement?
-                    3. Quel est l'objectif principal du document?
-                    4. Y a-t-il des actions importantes que le lecteur devrait entreprendre?
-                    
-                    Gardez l'explication concise mais utile.
+                    Analysez attentivement ce document et fournissez une explication complète et détaillée en français:
+
+                    TEXTE DU DOCUMENT:
+                    {translated_text[:1500]}
+
+                    Fournissez une explication structurée qui répond à ces questions de manière détaillée:
+
+                    1. **TYPE DE DOCUMENT**: De quel type de document s'agit-il exactement? (ex: facture, contrat, formulaire, certificat, etc.)
+
+                    2. **OBJECTIF ET FONCTION**: À quoi sert ce document? Pourquoi a-t-il été créé?
+
+                    3. **QUI DOIT L'UTILISER**: Qui sont les personnes qui reçoivent, remplissent ou utilisent typiquement ce document?
+
+                    4. **QUAND L'UTILISER**: Dans quelles situations ou moments ce document est-il utilisé?
+
+                    5. **ACTIONS REQUISES**: Que doit faire exactement la personne qui reçoit ce document? Y a-t-il des échéances? Doit-elle signer, payer, répondre, ou remplir quelque chose?
+
+                    6. **INFORMATIONS IMPORTANTES**: Quelles sont les informations les plus importantes à noter? Y a-t-il des numéros, dates, montants ou détails critiques?
+
+                    7. **PROCHAINES ÉTAPES**: Quelles sont les étapes suivantes recommandées après avoir lu ce document?
+
+                    Écrivez de manière claire, détaillée et pratique. Utilisez un langage accessible mais professionnel.
                     """
                 },
                 'wolof': {
-                    'system_prompt': 'Yow jikko nga ci jagleel dokimaa yi ci wolof.',
+                    'system_prompt': '''Yaw bokk naa ci xam-xam dokimaa yi ngir jëkkal nit ñi ci gëstu dokimaa yu gëstu ci wolof. 
+                    Jox jagleel yu mat, yu jëfandikoo te yu mën a jëkkal nit ñi ci xam loolu lan la war a def ak dokimaa bii.''',
                     'user_prompt': f"""
-                    Xoolal dokimaa bii te jagleel ko ci wolof:
-                    
-                    Mbind bu njëkk: {original_text[:1000]}
-                    Mbind bu tektal: {translated_text[:1000]}
-                    
-                    Jàngal ci wolof lii:
-                    1. Xanam dokimaa la?
-                    2. Kan la ko jëfandikoo?
-                    3. Xanam nuy jariñ ci dokimaa bii?
-                    4. Am na liñuy war a def?
-                    
-                    Jagleel bii war na togg waaye gëstu.
+                    Xoolal lépp dokimaa bii te jox jagleel bu mat ak bu gëstu ci wolof:
+
+                    MBIND GU CI DOKIMAA:
+                    {translated_text[:1500]}
+
+                    Jox jagleel bu sotti bu jàngal lii yu mat:
+
+                    1. **NDAM DOKIMAA**: Lan dokimaa la? (sax: bili, ndimbalante, formulaire, sertifika, etc.)
+
+                    2. **JARIÑ AK LIGGÉEY**: Lan la dokimaa bii jëfandikoo? Kuy koy defal ak luy?
+
+                    3. **KAN LA WAR A KO JËFANDIKOO**: Kan nit ñi ñuy ko ko am, koy fey walla koy jëfandikoo?
+
+                    4. **KAÑU LA KO JËFANDIKOO**: Ci ban xeetu walla kañu la dokimaa bii ko jëfandikoo?
+
+                    5. **LI LA WAR A DEF**: Lan la kenn ku ko am a war a def? Am na deadline? War na siine, fey, jàngal, walla fey?
+
+                    6. **JAGLEEL YU GËSTU**: Yan jagleel yu gëstu ci biir? Am na nimero, bis, xaalis walla cistaaraan yu gëstu?
+
+                    7. **LOOLU MU JËKKI**: Yan tànn yu ñu mooy jàngal bu ma jàng dokimaa bii?
+
+                    Bind ci yoon bu mat, bu toll ak bu mën a jëfandikoo. Jëfandikoo làkk bu naan-naan waaye bu professionnel.
                     """
                 }
             }
@@ -462,35 +488,92 @@ def generate_document_explanation(original_text: str, translated_text: str, targ
                     {"role": "system", "content": lang_config['system_prompt']},
                     {"role": "user", "content": lang_config['user_prompt']}
                 ],
-                max_tokens=400,
-                temperature=0.7
+                max_tokens=600,  # Increased for more detailed explanations
+                temperature=0.3  # Lower temperature for more focused, consistent responses
             )
             
-            return response.choices[0].message.content.strip()
+            explanation = response.choices[0].message.content.strip()
+            logging.info(f"Generated GPT explanation in {target_language}: {len(explanation)} characters")
+            return explanation
             
         except Exception as openai_error:
             logging.warning(f"OpenAI API call failed: {openai_error}")
-            # Fall back to localized explanation
-            if target_language == 'italian':
-                return f"Questo documento è stato tradotto in italiano. Basandosi sul contenuto estratto, sembra essere un documento che contiene informazioni importanti per la vostra revisione. Il documento potrebbe richiedere azioni specifiche da parte vostra."
-            elif target_language == 'french':
-                return f"Ce document a été traduit en français. Basé sur le contenu extrait, il semble être un document qui contient des informations importantes pour votre révision. Le document pourrait nécessiter des actions spécifiques de votre part."
-            elif target_language == 'wolof':
-                return f"Dokimaa bii tekk na ci wolof. Ci kenn-kenn wi yàq ci biir, mel na dokimaa bu am jagleel yu gëstu ngir sa xool. Dokimaa bii mën na laaj liñu-liñu ci sa yàgg."
-            else:
-                return f"This document has been translated to {target_language}. Based on the extracted content, it appears to be a document that contains important information for your review."
+            return get_enhanced_fallback_explanation(original_text, translated_text, target_language)
         
     except Exception as e:
         logging.error(f"Document explanation generation failed: {e}")
-        # Final fallback
-        if target_language == 'italian':
-            return f"Questo documento è stato elaborato con successo. Contiene informazioni che potrebbero essere importanti per voi."
-        elif target_language == 'french':
-            return f"Ce document a été traité avec succès. Il contient des informations qui pourraient être importantes pour vous."
-        elif target_language == 'wolof':
-            return f"Dokimaa bii defal na ci ndukoolu. Am na jagleel yu mën a gëstu ngir yaw."
-        else:
-            return f"This document has been processed successfully. It contains information that may be important for you."
+        return get_enhanced_fallback_explanation(original_text, translated_text, target_language)
+
+def get_enhanced_fallback_explanation(original_text: str, translated_text: str, target_language: str) -> str:
+    """Generate enhanced fallback explanations with basic document analysis"""
+    
+    # Analyze document content for better fallback
+    text_to_analyze = translated_text.lower()
+    
+    # Detect document type based on keywords
+    doc_type = "documento"
+    if any(word in text_to_analyze for word in ["fattura", "invoice", "bill", "pagare", "importo", "totale"]):
+        doc_type = "fattura" if target_language == 'italian' else "facture" if target_language == 'french' else "bili"
+    elif any(word in text_to_analyze for word in ["contratto", "contract", "accordo", "firmare", "stipulare"]):
+        doc_type = "contratto" if target_language == 'italian' else "contrat" if target_language == 'french' else "kontara"
+    elif any(word in text_to_analyze for word in ["modulo", "form", "compilare", "richiesta"]):
+        doc_type = "modulo" if target_language == 'italian' else "formulaire" if target_language == 'french' else "formulaire"
+    elif any(word in text_to_analyze for word in ["certificato", "certificate", "attestato"]):
+        doc_type = "certificato" if target_language == 'italian' else "certificat" if target_language == 'french' else "sertifika"
+    
+    if target_language == 'italian':
+        return f"""**ANALISI DEL DOCUMENTO**
+
+**Tipo di Documento**: Questo è un {doc_type} che è stato tradotto in italiano usando l'intelligenza artificiale.
+
+**Scopo**: Il documento contiene informazioni importanti che richiedono la vostra attenzione. Sembra essere un documento ufficiale o commerciale.
+
+**Cosa Fare**: 
+- Leggete attentamente tutto il contenuto tradotto
+- Verificate le date, numeri e informazioni importanti
+- Se contiene richieste o scadenze, prendete nota
+- Se necessario, consultate un esperto per azioni specifiche
+
+**Informazioni Importanti**: Il documento originale è stato estratto e tradotto automaticamente. Verificate sempre le informazioni critiche con la fonte originale se necessario.
+
+**Prossimi Passi**: Analizzate il contenuto tradotto e decidete se sono necessarie azioni immediate o se dovete consultare qualcuno per ulteriori chiarimenti."""
+
+    elif target_language == 'french':
+        return f"""**ANALYSE DU DOCUMENT**
+
+**Type de Document**: Ceci est un {doc_type} qui a été traduit en français en utilisant l'intelligence artificielle.
+
+**Objectif**: Le document contient des informations importantes qui nécessitent votre attention. Il semble être un document officiel ou commercial.
+
+**Que Faire**: 
+- Lisez attentivement tout le contenu traduit
+- Vérifiez les dates, numéros et informations importantes
+- S'il contient des demandes ou échéances, prenez note
+- Si nécessaire, consultez un expert pour des actions spécifiques
+
+**Informations Importantes**: Le document original a été extrait et traduit automatiquement. Vérifiez toujours les informations critiques avec la source originale si nécessaire.
+
+**Prochaines Étapes**: Analysez le contenu traduit et décidez si des actions immédiates sont nécessaires ou si vous devez consulter quelqu'un pour des clarifications supplémentaires."""
+
+    elif target_language == 'wolof':
+        return f"""**XOOLAL DOKIMAA BI**
+
+**Ndam Dokimaa**: Loolu {doc_type} la bu tektal ci wolof ak AI.
+
+**Jariñ**: Dokimaa bii am na jagleel yu gëstu yu mën a laaj sa xol. Mel na dokimaa bu ofiisiyel walla bu commerce.
+
+**Loolu Nga War a Def**: 
+- Jàng lépp mbind bu tektal bi
+- Xool bis yi, nimero yi ak jagleel yu gëstu
+- Su am laaj walla deadline, bind ko
+- Su soxla, jàngal expert ngir liggéey yu bari
+
+**Jagleel Yu Gëstu**: Dokimaa bu njëkk bi tektal na ak jëfandikoo otomatik. Xolaleen lépp jagleel yu gëstu ak kenn ku am dokimaa bu njëkk su soxla.
+
+**Loolu Mu Jëkki**: Xoolal mbind bu tektal bi te décider su war nga def loolu bu bari walla war nga jàngal kenn ngir gën a xam.**"""
+
+    else:
+        return f"This {doc_type} has been translated to {target_language} using artificial intelligence. The document appears to contain important information that requires your attention and may need specific actions from you."
 
 def translate_text(text: str, target_language: str) -> dict:
     """Translate text using Google Translate API"""
