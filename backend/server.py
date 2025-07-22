@@ -449,75 +449,187 @@ Focus on being practical and actionable rather than just descriptive."""
         return get_enhanced_fallback_explanation(original_text, translated_text, target_language)
 
 def get_enhanced_fallback_explanation(original_text: str, translated_text: str, target_language: str) -> str:
-    """Generate enhanced fallback explanations with basic document analysis"""
+    """Generate enhanced fallback explanations using the improved template structure"""
     
-    # Analyze document content for better fallback
+    # Analyze document content for better context-aware explanations
     text_to_analyze = translated_text.lower()
     
-    # Detect document type based on keywords
+    # Enhanced document type detection with more categories
     doc_type = "documento"
-    if any(word in text_to_analyze for word in ["fattura", "invoice", "bill", "pagare", "importo", "totale"]):
+    doc_actions = ""
+    key_details = []
+    
+    # More comprehensive document type detection
+    if any(word in text_to_analyze for word in ["fattura", "invoice", "bill", "pagare", "importo", "totale", "iva"]):
         doc_type = "fattura" if target_language == 'italian' else "facture" if target_language == 'french' else "bili"
+        doc_actions = "pagare entro la scadenza" if target_language == 'italian' else "payer avant l'échéance" if target_language == 'french' else "fey ci deadline bi"
+        
     elif any(word in text_to_analyze for word in ["contratto", "contract", "accordo", "firmare", "stipulare"]):
         doc_type = "contratto" if target_language == 'italian' else "contrat" if target_language == 'french' else "kontara"
-    elif any(word in text_to_analyze for word in ["modulo", "form", "compilare", "richiesta"]):
-        doc_type = "modulo" if target_language == 'italian' else "formulaire" if target_language == 'french' else "formulaire"
-    elif any(word in text_to_analyze for word in ["certificato", "certificate", "attestato"]):
+        doc_actions = "leggere, firmare e restituire" if target_language == 'italian' else "lire, signer et retourner" if target_language == 'french' else "jàng, siine te delloo"
+        
+    elif any(word in text_to_analyze for word in ["modulo", "form", "iscrizione", "compilare", "richiesta", "domanda"]):
+        doc_type = "modulo di iscrizione" if target_language == 'italian' else "formulaire d'inscription" if target_language == 'french' else "formulaire bu bokk"
+        doc_actions = "compilare tutti i campi e inviare" if target_language == 'italian' else "remplir tous les champs et envoyer" if target_language == 'french' else "fey lépp te yónnee"
+        
+    elif any(word in text_to_analyze for word in ["questionario", "questionnaire", "survey", "domande", "risposte"]):
+        doc_type = "questionario" if target_language == 'italian' else "questionnaire" if target_language == 'french' else "laaj"
+        doc_actions = "rispondere a tutte le domande" if target_language == 'italian' else "répondre à toutes les questions" if target_language == 'french' else "jàngal lépp laaj yi"
+        
+    elif any(word in text_to_analyze for word in ["certificato", "certificate", "attestato", "diploma"]):
         doc_type = "certificato" if target_language == 'italian' else "certificat" if target_language == 'french' else "sertifika"
+        doc_actions = "conservare per i propri archivi" if target_language == 'italian' else "conserver pour vos archives" if target_language == 'french' else "moytul ci sa file yi"
+        
+    elif any(word in text_to_analyze for word in ["lettera", "letter", "comunicazione", "avviso", "notifica"]):
+        doc_type = "lettera ufficiale" if target_language == 'italian' else "lettre officielle" if target_language == 'french' else "bataaxal bu ofisiyel"
+        doc_actions = "leggere attentamente e seguire le istruzioni" if target_language == 'italian' else "lire attentivement et suivre les instructions" if target_language == 'french' else "jàng bu baax te topale njàng yi"
     
+    # Extract key details from the text
+    import re
+    
+    # Find dates
+    date_patterns = [
+        r'\d{1,2}[/-]\d{1,2}[/-]\d{2,4}',
+        r'\d{1,2}\s+\w+\s+\d{2,4}',
+        r'\w+\s+\d{1,2},?\s+\d{2,4}'
+    ]
+    for pattern in date_patterns:
+        dates = re.findall(pattern, translated_text, re.IGNORECASE)
+        key_details.extend(dates[:3])  # Limit to first 3 dates
+    
+    # Find monetary amounts
+    money_patterns = [
+        r'€\s*\d+[.,]?\d*',
+        r'\d+[.,]?\d*\s*€',
+        r'\d+[.,]?\d*\s*euro'
+    ]
+    for pattern in money_patterns:
+        amounts = re.findall(pattern, translated_text, re.IGNORECASE)
+        key_details.extend(amounts[:3])  # Limit to first 3 amounts
+    
+    # Find emails and phones
+    email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
+    phone_pattern = r'[\+]?[\d\s\-\(\)]{8,15}'
+    
+    emails = re.findall(email_pattern, translated_text)
+    phones = re.findall(phone_pattern, translated_text)
+    
+    key_details.extend(emails[:2])
+    key_details.extend(phones[:2])
+    
+    # Generate structured explanation based on target language
     if target_language == 'italian':
-        return f"""**ANALISI DEL DOCUMENTO**
+        explanation = f"""**ANALISI DEL DOCUMENTO**
 
-**Tipo di Documento**: Questo è un {doc_type} che è stato tradotto in italiano usando l'intelligenza artificiale.
+**1. TIPO DI DOCUMENTO:** 
+Questo è un {doc_type} che è stato tradotto automaticamente in italiano.
 
-**Scopo**: Il documento contiene informazioni importanti che richiedono la vostra attenzione. Sembra essere un documento ufficiale o commerciale.
+**2. SCOPO E FUNZIONE:** 
+Il documento contiene informazioni ufficiali che richiedono la vostra attenzione e possibili azioni da parte vostra.
 
-**Cosa Fare**: 
-- Leggete attentamente tutto il contenuto tradotto
-- Verificate le date, numeri e informazioni importanti
-- Se contiene richieste o scadenze, prendete nota
-- Se necessario, consultate un esperto per azioni specifiche
+**3. COSA DOVETE FARE:** 
+{doc_actions if doc_actions else "Leggete attentamente tutto il contenuto e identificate eventuali azioni richieste"}
 
-**Informazioni Importanti**: Il documento originale è stato estratto e tradotto automaticamente. Verificate sempre le informazioni critiche con la fonte originale se necessario.
+**4. INFORMAZIONI CHIAVE DA NOTARE:**"""
 
-**Prossimi Passi**: Analizzate il contenuto tradotto e decidete se sono necessarie azioni immediate o se dovete consultare qualcuno per ulteriori chiarimenti."""
+        if key_details:
+            explanation += f"""
+{chr(10).join([f"• {detail}" for detail in key_details[:5]])}"""
+        else:
+            explanation += """
+• Date e scadenze menzionate nel documento
+• Importi o numeri di riferimento
+• Contatti per informazioni aggiuntive"""
+
+        explanation += f"""
+
+**5. COME RISPONDERE:**
+Se il documento contiene domande o scelte multiple, selezionate la risposta più appropriata per la vostra situazione.
+
+**6. PROSSIMI PASSI:**
+• Verificate se ci sono scadenze da rispettare
+• Preparate eventuali documenti richiesti
+• Contattate gli uffici competenti se avete dubbi
+• Conservate una copia per i vostri archivi
+
+**IMPORTANTE:** Verificate sempre le informazioni critiche con la fonte originale se necessario."""
 
     elif target_language == 'french':
-        return f"""**ANALYSE DU DOCUMENT**
+        explanation = f"""**ANALYSE DU DOCUMENT**
 
-**Type de Document**: Ceci est un {doc_type} qui a été traduit en français en utilisant l'intelligence artificielle.
+**1. TYPE DE DOCUMENT:** 
+Ceci est un {doc_type} qui a été traduit automatiquement en français.
 
-**Objectif**: Le document contient des informations importantes qui nécessitent votre attention. Il semble être un document officiel ou commercial.
+**2. OBJECTIF ET FONCTION:** 
+Le document contient des informations officielles qui nécessitent votre attention et possibles actions de votre part.
 
-**Que Faire**: 
-- Lisez attentivement tout le contenu traduit
-- Vérifiez les dates, numéros et informations importantes
-- S'il contient des demandes ou échéances, prenez note
-- Si nécessaire, consultez un expert pour des actions spécifiques
+**3. CE QUE VOUS DEVEZ FAIRE:** 
+{doc_actions if doc_actions else "Lisez attentivement tout le contenu et identifiez les actions requises éventuelles"}
 
-**Informations Importantes**: Le document original a été extrait et traduit automatiquement. Vérifiez toujours les informations critiques avec la source originale si nécessaire.
+**4. INFORMATIONS CLÉS À NOTER:**"""
 
-**Prochaines Étapes**: Analysez le contenu traduit et décidez si des actions immédiates sont nécessaires ou si vous devez consulter quelqu'un pour des clarifications supplémentaires."""
+        if key_details:
+            explanation += f"""
+{chr(10).join([f"• {detail}" for detail in key_details[:5]])}"""
+        else:
+            explanation += """
+• Dates et échéances mentionnées dans le document
+• Montants ou numéros de référence
+• Contacts pour informations supplémentaires"""
+
+        explanation += f"""
+
+**5. COMMENT RÉPONDRE:**
+Si le document contient des questions ou choix multiples, sélectionnez la réponse la plus appropriée pour votre situation.
+
+**6. PROCHAINES ÉTAPES:**
+• Vérifiez s'il y a des échéances à respecter
+• Préparez les documents éventuellement requis
+• Contactez les bureaux compétents si vous avez des doutes
+• Conservez une copie pour vos archives
+
+**IMPORTANT:** Vérifiez toujours les informations critiques avec la source originale si nécessaire."""
 
     elif target_language == 'wolof':
-        return f"""**XOOLAL DOKIMAA BI**
+        explanation = f"""**XOOLAL DOKIMAA BI**
 
-**Ndam Dokimaa**: Loolu {doc_type} la bu tektal ci wolof ak AI.
+**1. NDAM DOKIMAA:** 
+Loolu {doc_type} la bu tektal otomatik ci wolof.
 
-**Jariñ**: Dokimaa bii am na jagleel yu gëstu yu mën a laaj sa xol. Mel na dokimaa bu ofiisiyel walla bu commerce.
+**2. JARIÑ AK LIGGÉEY:** 
+Dokimaa bii am na jagleel yu ofisiyel yu laaj sa xol ak liggéey yu nga mën a def.
 
-**Loolu Nga War a Def**: 
-- Jàng lépp mbind bu tektal bi
-- Xool bis yi, nimero yi ak jagleel yu gëstu
-- Su am laaj walla deadline, bind ko
-- Su soxla, jàngal expert ngir liggéey yu bari
+**3. LOOLU NGA WAR A DEF:** 
+{doc_actions if doc_actions else "Jàng lépp loolu ci biir te gis su am loolu la war a def"}
 
-**Jagleel Yu Gëstu**: Dokimaa bu njëkk bi tektal na ak jëfandikoo otomatik. Xolaleen lépp jagleel yu gëstu ak kenn ku am dokimaa bu njëkk su soxla.
+**4. JAGLEEL YU GËSTU:**"""
 
-**Loolu Mu Jëkki**: Xoolal mbind bu tektal bi te décider su war nga def loolu bu bari walla war nga jàngal kenn ngir gën a xam.**"""
+        if key_details:
+            explanation += f"""
+{chr(10).join([f"• {detail}" for detail in key_details[:5]])}"""
+        else:
+            explanation += """
+• Bis ak deadline yu toj ci dokimaa bi
+• Xaalis walla nimero yu reference
+• Contact ngir am jagleel yu dul"""
+
+        explanation += f"""
+
+**5. Na NGA JÀNGAL:**
+Su dokimaa bii am laaj walla choix multiple, taan loolu lu gën a moo ngi ci sa xeetu.
+
+**6. TÀNN YU JËKK:**
+• Xool bu am deadline yu war a topale
+• Samp dokimaa yu laajee
+• Jàngal bureau yu gëm su am jafe
+• Moytul benn copy ci sa file
+
+**GËSTU:** Xoolal lépp jagleel yu gëstu ak source bu njëkk su soxla."""
 
     else:
-        return f"This {doc_type} has been translated to {target_language} using artificial intelligence. The document appears to contain important information that requires your attention and may need specific actions from you."
+        explanation = f"This {doc_type} has been automatically translated to {target_language}. The document contains official information that requires your attention and may need specific actions from you. Please read carefully and identify any required actions, important dates, amounts, or contact information. If the document contains questions or multiple choices, select the most appropriate response for your situation."
+
+    return explanation
 
 def translate_text(text: str, target_language: str) -> dict:
     """Translate text using Google Translate API"""
