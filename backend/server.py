@@ -196,25 +196,60 @@ def is_pdf_file(base64_data: str) -> bool:
         return False
 
 def convert_pdf_to_images(pdf_bytes: bytes) -> List[str]:
-    """Convert PDF bytes to list of base64 image strings"""
+    """Convert PDF bytes to list of base64 image strings with improved error handling"""
     try:
-        # Convert PDF to PIL images
-        images = convert_from_bytes(pdf_bytes, dpi=300, fmt='png')
+        # Convert PDF to PIL images with higher DPI for better OCR
+        images = convert_from_bytes(
+            pdf_bytes, 
+            dpi=400,  # Higher DPI for better text recognition
+            fmt='png',
+            thread_count=2,  # Use multiple threads
+            poppler_path=None,
+            first_page=None,
+            last_page=None,
+            use_cropbox=False,
+            strict=False  # Be more lenient with PDF parsing
+        )
+        
+        if not images:
+            raise Exception("No pages could be extracted from PDF")
         
         base64_images = []
-        for image in images:
-            # Convert PIL image to base64
-            buffer = io.BytesIO()
-            image.save(buffer, format='PNG')
-            img_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
-            base64_images.append(img_base64)
+        for page_num, image in enumerate(images):
+            try:
+                # Optimize image for OCR
+                # Convert to RGB if not already
+                if image.mode != 'RGB':
+                    image = image.convert('RGB')
+                
+                # Enhance image contrast for better OCR
+                from PIL import ImageEnhance
+                enhancer = ImageEnhance.Contrast(image)
+                image = enhancer.enhance(1.2)  # Slight contrast boost
+                
+                # Convert PIL image to base64
+                buffer = io.BytesIO()
+                image.save(buffer, format='PNG', optimize=True, quality=95)
+                img_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
+                base64_images.append(img_base64)
+                
+                logging.info(f"Successfully processed PDF page {page_num + 1}")
+                
+            except Exception as page_error:
+                logging.warning(f"Failed to process PDF page {page_num + 1}: {page_error}")
+                continue
         
+        if not base64_images:
+            raise Exception("No pages could be successfully processed")
+            
+        logging.info(f"Successfully converted PDF to {len(base64_images)} images")
         return base64_images
+        
     except Exception as e:
         raise Exception(f"PDF conversion failed: {str(e)}")
 
-def extract_text_from_single_image(base64_image: str) -> str:
-    """Extract text from a single image using Google Cloud Vision API"""
+def extract_text_from_single_image(base64_image: str, page_num: int = 1) -> str:
+    """Extract text from a single image using Google Cloud Vision API with better error handling"""
     try:
         # Use standard Google Cloud Vision API with API key
         url = f"https://vision.googleapis.com/v1/images:annotate?key={GOOGLE_API_KEY}"
@@ -230,7 +265,10 @@ def extract_text_from_single_image(base64_image: str) -> str:
                             "type": "TEXT_DETECTION",
                             "maxResults": 50
                         }
-                    ]
+                    ],
+                    "imageContext": {
+                        "languageHints": ["it", "fr", "en", "es", "de"]  # Common languages
+                    }
                 }
             ]
         }
@@ -239,7 +277,7 @@ def extract_text_from_single_image(base64_image: str) -> str:
             'Content-Type': 'application/json'
         }
         
-        response = requests.post(url, headers=headers, json=payload, timeout=30)
+        response = requests.post(url, headers=headers, json=payload, timeout=45)
         
         if response.status_code != 200:
             raise Exception(f"Vision API HTTP error {response.status_code}: {response.text}")
@@ -252,18 +290,21 @@ def extract_text_from_single_image(base64_image: str) -> str:
             
             # Check for errors in the response
             if 'error' in resp:
-                raise Exception(f"Vision API error: {resp['error']}")
+                raise Exception(f"Vision API error for page {page_num}: {resp['error']}")
             
             if 'textAnnotations' in resp and len(resp['textAnnotations']) > 0:
-                return resp['textAnnotations'][0]['description']
+                extracted_text = resp['textAnnotations'][0]['description']
+                logging.info(f"Extracted {len(extracted_text)} characters from page {page_num}")
+                return extracted_text
         
+        logging.warning(f"No text found in page {page_num}")
         return ""
         
     except Exception as e:
-        raise Exception(f"Text extraction failed: {str(e)}")
+        raise Exception(f"Text extraction failed for page {page_num}: {str(e)}")
 
 def extract_text_from_image(base64_image: str) -> str:
-    """Extract text from image or PDF using Google Cloud Vision API"""
+    """Extract text from image or PDF using Google Cloud Vision API with improved processing"""
     try:
         # Remove data URL prefix if present
         if 'base64,' in base64_image:
@@ -279,29 +320,51 @@ def extract_text_from_image(base64_image: str) -> str:
         
         # Check if it's a PDF file
         if is_pdf_file(base64_image):
-            logging.info("Processing PDF file...")
+            logging.info("Processing PDF file with improved handling...")
             
-            # Convert PDF to images
-            pdf_images = convert_pdf_to_images(file_bytes)
-            
-            if not pdf_images:
-                raise Exception("Could not convert PDF to images")
-            
-            # Extract text from each page
-            all_text = []
-            for i, img_base64 in enumerate(pdf_images):
-                try:
-                    page_text = extract_text_from_single_image(img_base64)
-                    if page_text.strip():
-                        all_text.append(f"--- Page {i+1} ---\n{page_text}")
-                except Exception as e:
-                    logging.warning(f"Failed to extract text from page {i+1}: {e}")
-                    continue
-            
-            if not all_text:
-                raise Exception("No text found in any PDF pages")
-            
-            return "\n\n".join(all_text)
+            try:
+                # Convert PDF to images
+                pdf_images = convert_pdf_to_images(file_bytes)
+                
+                if not pdf_images:
+                    raise Exception("Could not convert PDF to images")
+                
+                # Extract text from each page with retry logic
+                all_text = []
+                successful_pages = 0
+                
+                for i, img_base64 in enumerate(pdf_images):
+                    max_retries = 2
+                    page_text = ""
+                    
+                    for retry in range(max_retries):
+                        try:
+                            page_text = extract_text_from_single_image(img_base64, i + 1)
+                            successful_pages += 1
+                            break
+                        except Exception as e:
+                            logging.warning(f"Attempt {retry + 1} failed for page {i+1}: {e}")
+                            if retry == max_retries - 1:
+                                logging.error(f"Failed to extract text from page {i+1} after {max_retries} attempts")
+                            else:
+                                import time
+                                time.sleep(1)  # Brief pause before retry
+                
+                    if page_text and page_text.strip():
+                        all_text.append(f"--- Pagina {i+1} ---\n{page_text.strip()}")
+                
+                if not all_text:
+                    raise Exception(f"No text could be extracted from any of the {len(pdf_images)} PDF pages")
+                
+                final_text = "\n\n".join(all_text)
+                logging.info(f"Successfully extracted text from {successful_pages}/{len(pdf_images)} pages")
+                logging.info(f"Total extracted text length: {len(final_text)} characters")
+                
+                return final_text
+                
+            except Exception as pdf_error:
+                logging.error(f"PDF processing failed: {pdf_error}")
+                raise Exception(f"PDF processing failed: {str(pdf_error)}")
         
         else:
             # Handle as regular image
@@ -309,6 +372,7 @@ def extract_text_from_image(base64_image: str) -> str:
             return extract_text_from_single_image(base64_data)
         
     except Exception as e:
+        logging.error(f"Document processing failed: {e}")
         raise Exception(f"Text extraction failed: {str(e)}")
 
 def generate_document_explanation(original_text: str, translated_text: str, target_language: str) -> str:
