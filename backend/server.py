@@ -376,7 +376,7 @@ def extract_text_from_image(base64_image: str) -> str:
         raise Exception(f"Text extraction failed: {str(e)}")
 
 def generate_document_explanation(original_text: str, translated_text: str, target_language: str) -> str:
-    """Generate detailed, context-aware explanation using improved GPT prompt template"""
+    """Generate detailed, context-aware explanation using the new structured GPT prompt"""
     try:
         # Check if OpenAI API key is available
         openai_api_key = os.environ.get('OPENAI_API_KEY')
@@ -391,53 +391,67 @@ def generate_document_explanation(original_text: str, translated_text: str, targ
             
             client = OpenAI(api_key=openai_api_key)
             
-            # Language mapping for the improved prompt template
+            # Language mapping for the system prompt
             language_names = {
-                'italian': 'italiano',
-                'french': 'français', 
-                'wolof': 'wolof'
+                'italian': 'Italian',
+                'french': 'French', 
+                'wolof': 'Wolof'
             }
             
-            selected_language = language_names.get(target_language, target_language)
+            selected_language = language_names.get(target_language, target_language.title())
             
-            # Create the improved, more structured prompt
-            system_prompt = f"""You are a multilingual assistant helping users understand official or technical documents. The user has uploaded a document translated to {selected_language}.
+            # Use the exact system prompt provided by the user
+            system_prompt = f"""You are a multilingual assistant that helps users understand documents scanned or uploaded as images or PDFs. These documents have already been translated into the user's preferred language ({selected_language}).
 
-Your task is to:
-1. Carefully read and analyze the content
-2. Identify the type of document (questionnaire, letter, contract, training module, invoice, form, certificate, etc.)
-3. Explain the purpose of the document and what the user is expected to do with it
-4. Highlight key details (dates, names, actions, obligations, amounts, deadlines)
-5. If the document includes questions or multiple-choice, explain how to respond
-6. Write the explanation in {selected_language}, using a clear and helpful tone
+🎯 Your task is to:
+1. Carefully read and understand the translated text.
+2. Provide a clear and detailed explanation of the document, including:
+   - What kind of document it is (e.g., form, certificate, questionnaire, letter, contract)
+   - What its purpose is
+   - Who created it (if identifiable)
+   - Who the document is intended for
+   - What actions the user needs to take, if any
+   - What the most important information is
+3. Use simple, professional, and accessible language.
 
-Important: Avoid repeating the full text. Instead, summarize and explain meaning and action points."""
+💡 If the document is technical, legal, educational, or administrative, simplify the explanation for a general audience.
 
-            user_prompt = f"""Please analyze this document and provide a helpful explanation:
+✍️ Format your explanation in clear, user-friendly sections like this:
 
-DOCUMENT CONTENT:
-{translated_text[:2000]}
+**🔹 Document Type:**  
+Explain what type of document this is.
 
-Please provide a clear, structured explanation in {selected_language} that helps the user understand:
-- What type of document this is
-- What they need to do with it
-- Any important dates, deadlines, or actions required
-- How to properly respond if it contains questions or forms
+**🔹 Purpose:**  
+Explain the goal or intent of the document.
 
-Focus on being practical and actionable rather than just descriptive."""
+**🔹 Intended Recipient:**  
+Explain who the document is for (e.g., user, student, worker).
+
+**🔹 Required Actions:**  
+List any specific steps the user must take based on the document.
+
+**🔹 Additional Information:**  
+Highlight relevant dates, names, organizations, or any other key points.
+
+🌍 The explanation must be written in the same language as the translated document ({selected_language}).
+
+❌ Do not invent information. If something is unclear, say so. If the document is incomplete or vague, give the best possible interpretation based on available content."""
+
+            # Simple user message with just the translated document
+            user_message = f"Please analyze this translated document and provide a structured explanation:\n\n{translated_text[:2500]}"
 
             response = client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt}
+                    {"role": "user", "content": user_message}
                 ],
-                max_tokens=650,  # Increased for more comprehensive explanations
-                temperature=0.2  # Lower for more consistent, focused responses
+                max_tokens=700,  # Increased for the structured format
+                temperature=0.1  # Very low for consistent, focused responses
             )
             
             explanation = response.choices[0].message.content.strip()
-            logging.info(f"Generated improved GPT explanation in {target_language}: {len(explanation)} characters")
+            logging.info(f"Generated structured GPT explanation in {target_language}: {len(explanation)} characters")
             return explanation
             
         except Exception as openai_error:
